@@ -30,3 +30,6 @@ Start command: `uvicorn backend.main:app --host 0.0.0.0 --port $PORT`.
 Для SQLite подключите Persistent Disk и задайте `DB_PATH=/var/data/mystic.sqlite3`.
 
 Текущая версия — прототип, а не готовый платёжный продукт.
+
+## Передача заказчику
+Подробный чек-лист передачи проекта, настройки аккаунтов и проверки перед сдачей находится в [TRANSFER.md](TRANSFER.md).
