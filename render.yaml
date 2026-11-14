@@ -1,0 +1,20 @@
+services:
+  - type: web
+    name: mystic-nft-drop
+    runtime: python
+    buildCommand: pip install -r requirements.txt
+    startCommand: uvicorn backend.main:app --host 0.0.0.0 --port $PORT
+    healthCheckPath: /api/health
+    envVars:
+      - key: BOT_TOKEN
+        sync: false
+      - key: ADMIN_IDS
+        sync: false
+      - key: DEV_MODE
+        value: "false"
+      - key: DB_PATH
+        value: /var/data/mystic.sqlite3
+    disk:
+      name: mystic-data
+      mountPath: /var/data
+      sizeGB: 1
