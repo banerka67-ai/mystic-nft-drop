@@ -28,7 +28,7 @@ function artMarkup(prize, extraClass="") {
 async function api(path, options = {}) {
   const response = await fetch(path, {
     ...options,
-    headers: { "Content-Type": "application/json", ...(authHeader ? { Authorization: authHeader } : {}), ...(options.headers || {}) }
+    headers: { "Content-Type": "application/json", ...(authHeader ? { Authorization: authHeader } : (!tg ? { "x-dev-mode": "true" } : {})), ...(options.headers || {}) }
   });
   const data = await response.json().catch(() => ({}));
   if (!response.ok) throw new Error(data.detail || "Ошибка запроса");
