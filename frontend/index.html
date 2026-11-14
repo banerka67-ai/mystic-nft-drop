@@ -1,0 +1,49 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+  <meta name="theme-color" content="#090811">
+  <title>Mystic NFT Drop</title>
+  <script src="https://telegram.org/js/telegram-web-app.js"></script>
+  <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+  <div class="app-shell">
+    <header class="topbar">
+      <div class="brand-mark">✦</div>
+      <div><div class="brand">MYSTIC <span>DROP</span></div><div class="subtitle">Открой свою удачу</div></div>
+      <div class="avatar" id="avatar">M</div>
+    </header>
+    <main>
+      <section class="balance-card">
+        <div class="balance-label">ТВОЙ БАЛАНС</div>
+        <div class="balance-line"><span class="coin">◈</span><strong id="balance">—</strong><span class="currency">MST</span></div>
+        <div class="balance-note">Виртуальные монеты</div>
+      </section>
+      <section class="section-heading">
+        <div><div class="eyebrow">ИСПЫТАЙ УДАЧУ</div><h1>Рулетка подарков</h1></div>
+        <span class="live-dot">● LIVE</span>
+      </section>
+      <section class="roulette-card">
+        <div class="pointer"></div>
+        <div class="reel-window"><div class="reel" id="reel">
+          <div class="prize-tile"><span>🌙</span><small>Moon</small></div>
+          <div class="prize-tile"><span>⭐</span><small>Star</small></div>
+          <div class="prize-tile"><span>💎</span><small>Crystal</small></div>
+          <div class="prize-tile"><span>👑</span><small>Crown</small></div>
+          <div class="prize-tile"><span>🐉</span><small>Dragon</small></div>
+        </div></div>
+        <div class="roulette-bottom"><span>Стоимость попытки</span><strong>◈ 100 MST</strong></div>
+      </section>
+      <button class="primary-btn" id="spinBtn"><span>✦</span> КРУТИТЬ РУЛЕТКУ</button>
+      <p class="hint" id="hint">Результат определяется сервером. Все призы виртуальные.</p>
+      <section class="section-heading inventory-heading"><div><div class="eyebrow">ТВОИ НАХОДКИ</div><h2>Последние подарки</h2></div><span class="count" id="itemCount">0</span></section>
+      <div class="inventory-list" id="inventory"><div class="empty-state">Здесь появятся твои подарки ✨</div></div>
+    </main>
+    <nav class="bottom-nav"><div class="nav-item active"><span>✦</span>Главная</div><div class="nav-item" id="inventoryNav"><span>◇</span>Инвентарь</div><div class="nav-item"><span>☻</span>Профиль</div></nav>
+  </div>
+  <div class="modal hidden" id="resultModal"><div class="modal-card"><div class="modal-glow"></div><div class="eyebrow">ТВОЙ РЕЗУЛЬТАТ</div><div class="result-emoji" id="resultEmoji">💎</div><h2 id="resultName">Crystal</h2><div class="rarity" id="resultRarity">Редкий</div><button class="primary-btn" id="closeModal">ПОНЯТНО</button></div></div>
+  <script src="/static/app.js"></script>
+</body>
+</html>
