@@ -3,47 +3,102 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
-  <meta name="theme-color" content="#090811">
-  <title>Mystic NFT Drop</title>
+  <meta name="theme-color" content="#0b0b10">
+  <title>Mystic Drop</title>
   <script src="https://telegram.org/js/telegram-web-app.js"></script>
   <link rel="stylesheet" href="/static/style.css">
 </head>
 <body>
   <div class="app-shell">
     <header class="topbar">
-      <div class="brand-mark">✦</div>
-      <div><div class="brand">MYSTIC <span>DROP</span></div><div class="subtitle">Открой свою удачу</div></div>
-      <div class="avatar" id="avatar">M</div>
+      <a class="brand-lockup" href="#" id="homeBrand">
+        <div class="brand-symbol">M</div>
+        <div><div class="brand">MYSTIC<span>DROP</span></div><div class="subtitle">DIGITAL COLLECTIBLES</div></div>
+      </a>
+      <button class="profile-shortcut" id="profileShortcut" aria-label="Профиль"><span id="avatar">M</span></button>
     </header>
+
     <main>
-      <section class="balance-card">
-        <div class="balance-label">ТВОЙ БАЛАНС</div>
-        <div class="balance-line"><span class="coin">◈</span><strong id="balance">—</strong><span class="currency">MST</span></div>
-        <div class="balance-note">Виртуальные монеты</div>
+      <section class="screen active" id="homeScreen">
+        <section class="hero">
+          <div class="hero-copy">
+            <div class="eyebrow"><i></i> LIMITED COLLECTION</div>
+            <h1>Открой свою<br><em>коллекцию.</em></h1>
+            <p>Цифровые подарки. Редкие находки.<br>Твоя история начинается здесь.</p>
+            <button class="hero-button" id="heroSpin">Открыть рулетку <span>↗</span></button>
+          </div>
+          <div class="hero-orb"><div class="orb-core"></div><div class="orb-ring"></div><div class="orb-spark s1"></div><div class="orb-spark s2"></div></div>
+          <div class="hero-index">MYSTIC / 001</div>
+        </section>
+
+        <section class="section-heading">
+          <div><div class="eyebrow">DISCOVER</div><h2>Коллекция подарков</h2></div>
+          <span class="section-count">05 ITEMS</span>
+        </section>
+        <section class="gift-grid" id="giftShowcase">
+          <article class="gift-card gift-moon"><div class="gift-art"><div class="artifact moon-art"></div><span class="art-glint">✦</span></div><div class="gift-meta"><div><strong>Moon</strong><small>CLASSIC · 01</small></div><span class="rarity-dot common"></span></div></article>
+          <article class="gift-card gift-star"><div class="gift-art"><div class="artifact star-art"></div><span class="art-glint">✧</span></div><div class="gift-meta"><div><strong>Star</strong><small>CLASSIC · 02</small></div><span class="rarity-dot common"></span></div></article>
+          <article class="gift-card gift-crystal"><div class="gift-art"><div class="artifact crystal-art"></div><span class="art-glint">✦</span></div><div class="gift-meta"><div><strong>Crystal</strong><small>RARE · 03</small></div><span class="rarity-dot rare"></span></div></article>
+          <article class="gift-card gift-crown"><div class="gift-art"><div class="artifact crown-art"></div><span class="art-glint">✧</span></div><div class="gift-meta"><div><strong>Crown</strong><small>EPIC · 04</small></div><span class="rarity-dot epic"></span></div></article>
+          <article class="gift-card gift-dragon"><div class="gift-art"><div class="artifact dragon-art"></div><span class="art-glint">✦</span></div><div class="gift-meta"><div><strong>Mystic Dragon</strong><small>LEGENDARY · 05</small></div><span class="rarity-dot legendary"></span></div></article>
+        </section>
+
+        <section class="roulette-section" id="rouletteSection">
+          <div class="section-heading"><div><div class="eyebrow">TAKE YOUR CHANCE</div><h2>Рулетка подарков</h2></div><span class="live-tag">● LIVE</span></div>
+          <div class="roulette-card">
+            <div class="roulette-caption"><span>ВЫБЕРИ СВОЙ АРТЕФАКТ</span><span>01 / 05</span></div>
+            <div class="pointer"></div>
+            <div class="reel-window"><div class="reel" id="reel"></div></div>
+            <div class="roulette-bottom"><span>Стоимость попытки</span><strong>100 MST</strong></div>
+          </div>
+          <button class="primary-btn" id="spinBtn">КРУТИТЬ РУЛЕТКУ <span>↗</span></button>
+          <p class="hint" id="hint">Все предметы в демо-версии виртуальные.</p>
+        </section>
+
+        <section class="section-heading inventory-heading"><div><div class="eyebrow">YOUR COLLECTION</div><h2>Последние находки</h2></div><button class="text-link" id="seeInventory">Все предметы ↗</button></section>
+        <div class="inventory-list" id="inventory"><div class="empty-state">Твои находки появятся здесь</div></div>
       </section>
-      <section class="section-heading">
-        <div><div class="eyebrow">ИСПЫТАЙ УДАЧУ</div><h1>Рулетка подарков</h1></div>
-        <span class="live-dot">● LIVE</span>
+
+      <section class="screen" id="inventoryScreen">
+        <div class="page-heading"><div class="eyebrow">YOUR ITEMS</div><h1>Инвентарь</h1><p>Все подарки, которые ты получил.</p></div>
+        <div class="inventory-list inventory-full" id="inventoryFull"><div class="empty-state">Пока здесь пусто</div></div>
       </section>
-      <section class="roulette-card">
-        <div class="pointer"></div>
-        <div class="reel-window"><div class="reel" id="reel">
-          <div class="prize-tile"><span>🌙</span><small>Moon</small></div>
-          <div class="prize-tile"><span>⭐</span><small>Star</small></div>
-          <div class="prize-tile"><span>💎</span><small>Crystal</small></div>
-          <div class="prize-tile"><span>👑</span><small>Crown</small></div>
-          <div class="prize-tile"><span>🐉</span><small>Dragon</small></div>
-        </div></div>
-        <div class="roulette-bottom"><span>Стоимость попытки</span><strong>◈ 100 MST</strong></div>
+
+      <section class="screen" id="profileScreen">
+        <div class="page-heading"><div class="eyebrow">ACCOUNT</div><h1>Профиль</h1><p>Твой аккаунт и игровые средства.</p></div>
+        <section class="account-card">
+          <div class="account-avatar" id="profileAvatar">M</div>
+          <div><strong id="profileName">Игрок Mystic</strong><small id="profileUsername">@telegram_user</small></div>
+          <span class="account-mark">✦</span>
+        </section>
+        <section class="wallet-card">
+          <div class="wallet-top"><span>ТВОЙ БАЛАНС</span><span class="wallet-currency">MST</span></div>
+          <div class="wallet-value" id="balance">— <small>MST</small></div>
+          <div class="wallet-bottom"><span>Внутренняя валюта Mystic</span><span id="itemCount">0 предметов</span></div>
+        </section>
+        <section class="topup-block">
+          <div class="section-heading"><div><div class="eyebrow">TELEGRAM PAYMENTS</div><h2>Пополнение баланса</h2></div><span class="stars-mark">★</span></div>
+          <p class="topup-description">Пополнение через официальную оплату Telegram Stars.</p>
+          <div class="star-packages">
+            <button class="star-package selected" data-pack="100"><span class="stars">★</span><strong>100</strong><small>Stars</small></button>
+            <button class="star-package" data-pack="250"><span class="stars">★</span><strong>250</strong><small>Stars</small></button>
+            <button class="star-package" data-pack="500"><span class="stars">★</span><strong>500</strong><small>Stars</small></button>
+          </div>
+          <button class="primary-btn payment-btn" id="topupBtn" disabled>ОПЛАТА БУДЕТ ПОДКЛЮЧЕНА</button>
+          <p class="payment-note">Оплата пока не активна. Нужна настройка Telegram-бота и подтверждения платежей на сервере.</p>
+        </section>
+        <section class="profile-stats"><div><strong id="spinCount">—</strong><small>Рулеток</small></div><div><strong id="profileItemCount">0</strong><small>Подарков</small></div></section>
       </section>
-      <button class="primary-btn" id="spinBtn"><span>✦</span> КРУТИТЬ РУЛЕТКУ</button>
-      <p class="hint" id="hint">Результат определяется сервером. Все призы виртуальные.</p>
-      <section class="section-heading inventory-heading"><div><div class="eyebrow">ТВОИ НАХОДКИ</div><h2>Последние подарки</h2></div><span class="count" id="itemCount">0</span></section>
-      <div class="inventory-list" id="inventory"><div class="empty-state">Здесь появятся твои подарки ✨</div></div>
     </main>
-    <nav class="bottom-nav"><div class="nav-item active"><span>✦</span>Главная</div><div class="nav-item" id="inventoryNav"><span>◇</span>Инвентарь</div><div class="nav-item"><span>☻</span>Профиль</div></nav>
+
+    <nav class="bottom-nav">
+      <button class="nav-item active" data-screen="homeScreen"><span>⌂</span>Главная</button>
+      <button class="nav-item" data-screen="inventoryScreen"><span>◇</span>Инвентарь</button>
+      <button class="nav-item" data-screen="profileScreen"><span>○</span>Профиль</button>
+    </nav>
   </div>
-  <div class="modal hidden" id="resultModal"><div class="modal-card"><div class="modal-glow"></div><div class="eyebrow">ТВОЙ РЕЗУЛЬТАТ</div><div class="result-emoji" id="resultEmoji">💎</div><h2 id="resultName">Crystal</h2><div class="rarity" id="resultRarity">Редкий</div><button class="primary-btn" id="closeModal">ПОНЯТНО</button></div></div>
+
+  <div class="modal hidden" id="resultModal"><div class="modal-card"><div class="modal-glow"></div><div class="eyebrow">ТВОЯ НАХОДКА</div><div class="result-art" id="resultArt"><div class="artifact crystal-art"></div></div><h2 id="resultName">Crystal</h2><div class="rarity" id="resultRarity">Редкий</div><button class="primary-btn" id="closeModal">ПРОДОЛЖИТЬ</button></div></div>
   <script src="/static/app.js"></script>
-</body>
+n</body>
 </html>
