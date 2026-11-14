@@ -115,8 +115,10 @@ async def me(authorization: str | None = Header(default=None)):
         row = await (await db.execute("SELECT * FROM users WHERE telegram_id=?", (user["id"],))).fetchone()
         items = await (await db.execute(
             "SELECT COUNT(*) AS total FROM inventory WHERE telegram_id=?", (user["id"],))).fetchone()
+        spins = await (await db.execute(
+            "SELECT COUNT(*) AS total FROM spins WHERE telegram_id=?", (user["id"],))).fetchone()
     return {"id": user["id"], "name": row["first_name"], "username": row["username"],
-            "balance": row["balance"], "inventory_count": items["total"]}
+            "balance": row["balance"], "inventory_count": items["total"], "spin_count": spins["total"]}
 
 
 @app.get("/api/roulette")
@@ -171,6 +173,6 @@ async def inventory(authorization: str | None = Header(default=None)):
     user = await current_user(authorization)
     async with await db_connect() as db:
         rows = await (await db.execute(
-            "SELECT prize_name, emoji, rarity, created_at FROM inventory "
+            "SELECT prize_id, prize_name, emoji, rarity, created_at FROM inventory "
             "WHERE telegram_id=? ORDER BY id DESC LIMIT 50", (user["id"],))).fetchall()
     return {"items": [dict(r) for r in rows]}
