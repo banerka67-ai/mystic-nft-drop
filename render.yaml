@@ -2,7 +2,7 @@ services:
   - type: web
     name: mystic-nft-drop
     runtime: node
-    plan: starter
+    plan: free
     buildCommand: npm install
     startCommand: npm start
     healthCheckPath: /api/health
@@ -16,8 +16,4 @@ services:
       - key: DEV_MODE
         value: "false"
       - key: DB_PATH
-        value: /var/data/mystic.sqlite3
-    disk:
-      name: mystic-data
-      mountPath: /var/data
-      sizeGB: 1
+        value: ./data/mystic.sqlite3
