@@ -108,9 +108,9 @@ CREATE INDEX IF NOT EXISTS idx_mines_user ON mines_games(telegram_id, status);
 `);
 
 const MST_PER_STAR = 2; // Informational reference rate only; MST is not Telegram Stars.\nconst ROULETTE_MODES = {
-  classic: { id: "classic", title: "Mystic Classic", cost: 100, exponent: 2.1 },
-  premium: { id: "premium", title: "Mystic Premium", cost: 250, exponent: 1.25 },
-  legendary: { id: "legendary", title: "Mystic Legend", cost: 500, exponent: 0.72 }
+  classic: { id: "classic", title: "Mini Case", cost: 100, exponent: 2.1 },
+  premium: { id: "premium", title: "Mystic Case", cost: 250, exponent: 1.25 },
+  legendary: { id: "legendary", title: "NFT Case", cost: 500, exponent: 0.72 }
 };
 let ROULETTES = {};
 let giftsCache = { at: 0, gifts: [] };
