@@ -15,5 +15,3 @@ services:
         value: "@MysticDropNFT"
       - key: DEV_MODE
         value: "false"
-      - key: DB_PATH
-        value: ./data/mystic.sqlite3
