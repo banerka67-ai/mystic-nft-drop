@@ -166,12 +166,21 @@ function buildRoulettes(gifts) {
   const sorted = [...gifts].sort((a,b) => Number(a.star_count || 0) - Number(b.star_count || 0));
   const count = sorted.length;
   const take = (fraction) => sorted.slice(0, Math.max(1, Math.ceil(count * fraction)));
-  // Separate prize pools: two budget cases and a high-tier case focused on limited gifts.
   const limited = sorted.filter(g => Number.isFinite(g.limited_count) && g.limited_count > 0);
-  const premiumPool = take(0.72);
-  const nftPool = limited.length
-    ? limited.slice().sort((a,b) => Number(a.star_count || 0) - Number(b.star_count || 0))
+  const limitedSorted = [...limited].sort((a,b) => Number(a.star_count || 0) - Number(b.star_count || 0));
+
+  // The 250 MST case contains exactly two cheapest collectible gifts as low-weight entries.
+  // The rest of the pool is made of more expensive limited gifts; if Telegram exposes
+  // too few limited gifts, use the most expensive available catalog gifts as a fallback.
+  const premiumSource = limitedSorted.length >= 3
+    ? limitedSorted
+    : [...sorted.slice(Math.max(0, Math.floor(count * 0.55)))];
+  const premiumPool = premiumSource.length >= 3 ? premiumSource : take(0.72);
+  const cheapPremiumIds = new Set(premiumPool.slice(0, 2).map(g => String(g.id)));
+  const nftPool = limitedSorted.length
+    ? limitedSorted
     : sorted.slice(Math.max(0, Math.floor(count * 0.65)));
+
   const pools = {
     classic: take(0.4),
     premium: premiumPool,
@@ -184,8 +193,17 @@ function buildRoulettes(gifts) {
       const emoji = gift.sticker?.emoji || "🎁";
       const stars = Number(gift.star_count || 0);
       const percentile = pool.length <= 1 ? 0 : index / (pool.length - 1);
-      const rarity = percentile >= .9 ? "Легендарный" : percentile >= .7 ? "Эпический" : percentile >= .4 ? "Редкий" : "Обычный";
-      const weight = Math.max(1, Math.round(10000 / Math.pow(index + 1, mode.exponent)));
+      let rarity = percentile >= .9 ? "Легендарный" : percentile >= .7 ? "Эпический" : percentile >= .4 ? "Редкий" : "Обычный";
+      let weight = Math.max(1, Math.round(10000 / Math.pow(index + 1, mode.exponent)));
+
+      if (mode.id === "premium") {
+        const isCheapNft = cheapPremiumIds.has(String(gift.id));
+        rarity = isCheapNft ? "Редкий NFT" : "Легендарный NFT";
+        // Cheap NFT prizes have deliberately reduced odds; expensive collectibles
+        // remain the main rare prizes in this case.
+        weight = isCheapNft ? 1 : Math.max(4, Math.round(90 / Math.pow(index - 1, 1.15)));
+      }
+
       return {
         id: String(gift.id),
         gift_id: String(gift.id),
@@ -353,7 +371,7 @@ app.get("/api/roulette", auth, async (req,res) => {
     const liveRoulettes = buildRoulettes(gifts);
     const rouletteList = Object.values(liveRoulettes).map(r => ({
       id:r.id, title:r.title, cost:r.cost,
-      prizes:r.prizes.map(p => ({ ...safePrize(p), chance:Number((p.weight / r.prizes.reduce((sum,x) => sum + x.weight, 0) * 100).toFixed(2)) }))
+      prizes:r.prizes.map(p => safePrize(p))
     }));
     res.json({
       roulettes: rouletteList,
@@ -404,6 +422,20 @@ app.get("/api/history", auth, requireSubscription, (req,res) => {
   res.json({ spins, mines });
 });
 
+app.get("/api/mines/active", auth, requireSubscription, (req,res) => {
+  const row = db.prepare("SELECT id, bet, revealed_json, multiplier FROM mines_games WHERE telegram_id=? AND status='active' ORDER BY created_at DESC LIMIT 1").get(req.user.id);
+  if (!row) return res.json({ active:false });
+  res.json({
+    active:true,
+    game_id:row.id,
+    bet:row.bet,
+    revealed:JSON.parse(row.revealed_json),
+    multiplier:Number(row.multiplier),
+    bombs_count:4,
+    grid_size:25
+  });
+});
+
 app.post("/api/mines/start", auth, requireSubscription, (req,res) => {
   try {
     const bet = Number(req.body?.bet);
@@ -413,6 +445,8 @@ app.post("/api/mines/start", auth, requireSubscription, (req,res) => {
     while (bombs.size < 4) bombs.add(crypto.randomInt(0,25));
     const run = db.transaction(() => {
       createUser.run(req.user.id,req.user.first_name,req.user.username);
+      const active = db.prepare("SELECT id FROM mines_games WHERE telegram_id=? AND status='active' LIMIT 1").get(req.user.id);
+      if (active) throw Object.assign(new Error("У тебя уже есть активная игра. Продолжи её или забери выигрыш."), { status:409 });
       const user = getUser.get(req.user.id);
       if (user.balance < bet) throw Object.assign(new Error("Недостаточно MST"), { status:400 });
       db.prepare("UPDATE users SET balance=balance-? WHERE telegram_id=?").run(bet,req.user.id);
@@ -431,9 +465,19 @@ app.post("/api/mines/reveal", auth, requireSubscription, (req,res) => {
     const result = db.transaction(() => {
       const row = db.prepare("SELECT * FROM mines_games WHERE id=? AND telegram_id=?").get(game_id,req.user.id);
       if (!row || row.status !== "active") throw Object.assign(new Error("Активная игра не найдена"), { status:404 });
-      const bombs = JSON.parse(row.bombs_json);
+      let bombs = JSON.parse(row.bombs_json);
       const revealed = JSON.parse(row.revealed_json);
       if (revealed.includes(cell)) throw Object.assign(new Error("Эта клетка уже открыта"), { status:409 });
+
+      // The first pick is protected so a new player can actually start the round.
+      // If it lands on a bomb, move that bomb to a random untouched safe position.
+      if (revealed.length === 0 && bombs.includes(cell)) {
+        const candidates = Array.from({length:25},(_,i)=>i).filter(i => i !== cell && !bombs.includes(i));
+        const replacement = candidates[crypto.randomInt(0,candidates.length)];
+        bombs = bombs.filter(i => i !== cell).concat(replacement);
+        db.prepare("UPDATE mines_games SET bombs_json=? WHERE id=? AND status='active'").run(JSON.stringify(bombs),game_id);
+      }
+
       if (bombs.includes(cell)) {
         const next = [...revealed,cell];
         db.prepare("UPDATE mines_games SET revealed_json=?, status='lost', multiplier=0, payout=0, finished_at=CURRENT_TIMESTAMP WHERE id=? AND status='active'").run(JSON.stringify(next),game_id);
@@ -441,8 +485,8 @@ app.post("/api/mines/reveal", auth, requireSubscription, (req,res) => {
       }
       const next = [...revealed,cell];
       let safeProbability = 1;
-      for (let i=0;i<next.length;i++) safeProbability *= (21-i)/(25-i);
-      const multiplier = Number((0.96 / safeProbability).toFixed(4));
+      for (let i=0;i<next.length-1;i++) safeProbability *= (20-i)/(24-i);
+      const multiplier = next.length === 1 ? 1 : Number((0.96 / safeProbability).toFixed(4));
       db.prepare("UPDATE mines_games SET revealed_json=?, multiplier=? WHERE id=? AND status='active'").run(JSON.stringify(next),multiplier,game_id);
       return { hit:false, cell, revealed:next, multiplier, safe_count:next.length };
     }).immediate();
