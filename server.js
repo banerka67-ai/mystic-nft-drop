@@ -212,7 +212,7 @@ function weightedPrize(prizes) {
 function requireBodyString(value, min=8, max=80) {
   return typeof value === "string" && value.length >= min && value.length <= max;
 }
-function apiError(res, err) { return res.status(err.status || 500).json({ error: err.message || "Внутренняя ошибка сервера" }); }
+function apiError(res, err) { const constraint = String(err.code || "").startsWith("SQLITE_CONSTRAINT"); const status = err.status || (constraint ? 409 : 500); return res.status(status).json({ error: constraint ? "Эта операция уже выполнена или данные конфликтуют." : (err.message || "Внутренняя ошибка сервера") }); }
 
 app.get("/api/health", (req,res) => res.json({ ok: true, app: "Mystic NFT Drop", runtime: "node" }));
 app.get("/api/access", auth, requireSubscription, (req,res) => res.json({ ok: true, subscribed: true, channel: CHANNEL, demo: !!req.subscription.demo }));
