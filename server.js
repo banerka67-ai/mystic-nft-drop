@@ -61,6 +61,11 @@ CREATE TABLE IF NOT EXISTS mines_games (
   created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
   finished_at TEXT
 );
+CREATE TABLE IF NOT EXISTS daily_claims (
+  telegram_id TEXT PRIMARY KEY REFERENCES users(telegram_id),
+  last_claim TEXT NOT NULL,
+  streak INTEGER NOT NULL DEFAULT 1
+);
 CREATE INDEX IF NOT EXISTS idx_inventory_user ON inventory(telegram_id, id DESC);
 CREATE INDEX IF NOT EXISTS idx_mines_user ON mines_games(telegram_id, status);
 \`);
@@ -186,6 +191,31 @@ app.get("/api/me", auth, requireSubscription, (req,res) => {
   res.json({ id: u.id, name: row.first_name, username: row.username, balance: row.balance, inventory_count: inventoryCount, spin_count: spinCount });
 });
 
+app.get("/api/daily", auth, requireSubscription, (req,res) => {
+  createUser.run(req.user.id,req.user.first_name,req.user.username);
+  const claim = db.prepare("SELECT last_claim, streak FROM daily_claims WHERE telegram_id=?").get(req.user.id);
+  const today = new Date().toISOString().slice(0,10);
+  const yesterday = new Date(Date.now()-86400000).toISOString().slice(0,10);
+  res.json({ claimed: claim?.last_claim === today, streak: claim?.streak || 0, reward: 100, next_streak: claim?.last_claim === yesterday ? (claim.streak % 7) + 1 : 1 });
+});
+app.post("/api/daily/claim", auth, requireSubscription, (req,res) => {
+  try {
+    createUser.run(req.user.id,req.user.first_name,req.user.username);
+    const today = new Date().toISOString().slice(0,10);
+    const yesterday = new Date(Date.now()-86400000).toISOString().slice(0,10);
+    const run = db.transaction(() => {
+      const old = db.prepare("SELECT last_claim, streak FROM daily_claims WHERE telegram_id=?").get(req.user.id);
+      if (old?.last_claim === today) throw Object.assign(new Error("Ежедневный бонус уже получен. Загляни завтра!"),{status:409});
+      const streak = old?.last_claim === yesterday ? (old.streak % 7) + 1 : 1;
+      const reward = 100 + (streak === 7 ? 100 : 0);
+      db.prepare("INSERT INTO daily_claims(telegram_id,last_claim,streak) VALUES(?,?,?) ON CONFLICT(telegram_id) DO UPDATE SET last_claim=excluded.last_claim, streak=excluded.streak").run(req.user.id,today,streak);
+      db.prepare("UPDATE users SET balance=balance+?, updated_at=CURRENT_TIMESTAMP WHERE telegram_id=?").run(reward,req.user.id);
+      return { reward, streak, balance:getUser.get(req.user.id).balance };
+    });
+    res.json(run());
+  } catch(err) { apiError(res,err); }
+});
+
 app.get("/api/roulette", auth, requireSubscription, (req,res) => {
   const rouletteList = Object.values(ROULETTES).map(r => ({
     id:r.id, title:r.title, cost:r.cost, prizes:r.prizes.map(safePrize),
@@ -266,7 +296,9 @@ app.post("/api/mines/reveal", auth, requireSubscription, (req,res) => {
       return res.json({ hit:true, cell, bombs, revealed:[...revealed,cell], multiplier:0, payout:0 });
     }
     const next = [...revealed,cell];
-    const multiplier = Number((25 / (25-next.length) * (24 / (24-next.length)) * (23 / (23-next.length)) * (22 / (22-next.length))).toFixed(4));
+    let safeProbability = 1;
+    for (let i=0;i<next.length;i++) safeProbability *= (21-i)/(25-i);
+    const multiplier = Number((0.96 / safeProbability).toFixed(4));
     db.prepare("UPDATE mines_games SET revealed_json=?, multiplier=? WHERE id=?").run(JSON.stringify(next),multiplier,game_id);
     res.json({ hit:false, cell, revealed:next, multiplier, safe_count:next.length });
   } catch(err) { apiError(res,err); }
