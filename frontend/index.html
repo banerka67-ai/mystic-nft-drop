@@ -4,7 +4,7 @@
 <meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
 <meta name="theme-color" content="#0a0b10"><title>MYSTIC NFT DROP — магазин подарков</title>
 <script src="https://telegram.org/js/telegram-web-app.js"></script>
-<link rel="stylesheet" href="/static/style.css?v=channel-mystic-7">
+<link rel="stylesheet" href="/static/style.css?v=mst-rate-8">
 </head>
 <body><div class="app-shell">
 <header class="topbar">
@@ -25,14 +25,14 @@
 <section class="roulette-section" id="rouletteSection">
 <div class="section-heading"><div><div class="eyebrow">TRY YOUR LUCK</div><h2>Рулетка подарков</h2></div><span class="live-tag">● LIVE DROP</span></div>
 <div class="roulette-modes" id="rouletteModes">
-<button class="roulette-mode active" data-mode="classic">CLASSIC<small>100 MST</small></button>
-<button class="roulette-mode" data-mode="premium">PREMIUM<small>250 MST</small></button>
-<button class="roulette-mode" data-mode="legendary">LEGEND<small>500 MST</small></button>
+<button class="roulette-mode active" data-mode="classic">CLASSIC<small>100 MST · ≈50⭐</small></button>
+<button class="roulette-mode" data-mode="premium">PREMIUM<small>250 MST · ≈125⭐</small></button>
+<button class="roulette-mode" data-mode="legendary">LEGEND<small>500 MST · ≈250⭐</small></button>
 </div>
 <div class="roulette-card">
 <div class="roulette-caption"><span>ПРИЗОВАЯ ЛЕНТА</span><span id="rouletteTitle">MYSTIC CLASSIC</span></div>
 <div class="pointer"></div><div class="reel-window"><div class="reel" id="reel"></div></div>
-<div class="roulette-bottom"><span>Стоимость: <strong id="spinCost">100 MST</strong></span><span>Баланс: <strong id="spinBalance">0 MST</strong></span></div>
+<div class="roulette-bottom"><span>Стоимость: <strong id="spinCost">100 MST · ≈50⭐</strong></span><span>Баланс: <strong id="spinBalance">0 MST</strong></span></div>
 <div class="odds-list" id="oddsList"></div>
 <button class="primary-btn" id="spinButton">КРУТИТЬ <span>✦</span></button>
 <p class="hint">Вероятности показаны открыто. Выигрыш сохраняется в инвентаре приложения.</p>
@@ -42,10 +42,10 @@
 <div class="inventory-list" id="homeInventory"><div class="empty-state">Пока нет выигрышей</div></div>
 </section>
 <section class="screen" id="tasksScreen">
-<div class="page-heading"><div class="eyebrow">BONUS CENTER</div><h1>Задания</h1><p>Выполняй простые действия и получай MST — внутреннюю валюту, эквивалентную звёздам по курсу проекта.</p></div>
+<div class="page-heading"><div class="eyebrow">BONUS CENTER</div><h1>Задания</h1><p>Выполняй задания и получай внутреннюю валюту MST. Расчётный ориентир: 2 MST ≈ 1 Telegram ⭐.</p></div>
 <div class="task-summary"><div><span class="eyebrow">ДОСТУПНЫЕ ЗАДАНИЯ</span><strong id="taskCount">Загрузка…</strong></div><span class="task-summary-icon">✦</span></div>
 <div class="tasks-list" id="taskList"><div class="empty-state">Загружаем задания…</div></div>
-<p class="hint task-footnote">MST — внутренняя валюта приложения, не реальные Telegram Stars.</p>
+<p class="hint task-footnote">MST — внутренняя валюта приложения. Указанный курс — только справочный: MST нельзя обменять на реальные Telegram Stars.</p>
 </section>
 <section class="screen" id="inventoryScreen">
 <div class="page-heading"><div class="eyebrow">YOUR COLLECTION</div><h1>Инвентарь</h1><p>Подарки, выпавшие в рулетке.</p></div>
@@ -54,7 +54,7 @@
 <section class="screen" id="profileScreen">
 <div class="page-heading"><div class="eyebrow">ACCOUNT</div><h1>Профиль</h1><p>Твой аккаунт Mystic Drop.</p></div>
 <section class="account-card"><div class="account-avatar" id="profileAvatar">M</div><div><strong id="profileName">Игрок Mystic</strong><small id="profileUsername">Telegram account</small></div><span class="account-mark">✦</span></section>
-<section class="wallet-card"><div class="wallet-top"><span>ТВОЙ БАЛАНС</span><span class="wallet-currency">MST</span></div><div class="wallet-value" id="balance">0 <small>MST</small></div><div class="wallet-bottom"><span>Внутренняя валюта Mystic</span><span id="itemCount">0 подарков</span></div></section>
+<section class="wallet-card"><div class="wallet-top"><span>ТВОЙ БАЛАНС</span><span class="wallet-currency">MST</span></div><div class="wallet-value" id="balance">0 <small>MST</small></div><div class="wallet-bottom"><span>Внутренняя валюта · 2 MST ≈ 1⭐</span><span id="itemCount">0 подарков</span></div></section>
 <section class="profile-stats"><div><strong id="spinCount">0</strong><small>Прокруток</small></div><div><strong id="profileItemCount">0</strong><small>Подарков</small></div></section>
 <p class="payment-note">Пока рулетка выдаёт виртуальные записи о подарках внутри приложения. Автоматическая передача Telegram Gifts на аккаунт не подключена.</p>
 </section>
@@ -67,4 +67,4 @@
 </nav></div>
 <div class="modal hidden" id="resultModal"><div class="modal-card"><div class="modal-glow"></div><div class="eyebrow">ТВОЙ ВЫИГРЫШ</div><div class="result-art" id="resultArt"></div><h2 id="resultName">Подарок!</h2><div class="rarity" id="resultRarity"></div><button class="primary-btn" id="closeResult">ЗАБРАТЬ В ИНВЕНТАРЬ</button></div></div>
 <div class="toast" id="toast"></div>
-<script src="/static/app.js?v=channel-mystic-7"></script></body></html>
+<script src="/static/app.js?v=mst-rate-8"></script></body></html>
