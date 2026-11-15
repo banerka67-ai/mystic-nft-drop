@@ -103,6 +103,13 @@ CREATE TABLE IF NOT EXISTS task_claims (
   created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
   UNIQUE(telegram_id, task_id, claim_day)
 );
+CREATE TABLE IF NOT EXISTS admin_balance_logs (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  admin_telegram_id TEXT NOT NULL,
+  target_telegram_id TEXT NOT NULL REFERENCES users(telegram_id),
+  amount INTEGER NOT NULL CHECK(amount > 0),
+  created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
 CREATE INDEX IF NOT EXISTS idx_inventory_user ON inventory(telegram_id, id DESC);
 CREATE INDEX IF NOT EXISTS idx_mines_user ON mines_games(telegram_id, status);
 `);
@@ -556,20 +563,65 @@ app.post("/telegram/webhook", async (req, res) => {
   res.sendStatus(200);
   const message = req.body?.message;
   const chatId = message?.chat?.id;
+  const senderId = message?.from?.id ? String(message.from.id) : "";
   const text = String(message?.text || "").trim();
-  if (!chatId || !/^\/start(?:@\w+)?(?:\s|$)/i.test(text)) return;
+  if (!chatId || !text) return;
+
+  const reply = (body) => telegramApi("sendMessage", { chat_id: chatId, text: body });
+  const giveMatch = text.match(/^\/give(?:@\w+)?\\s+(\\d{1,20})\\s+(\\d{1,9})$/i);
+  const balanceMatch = text.match(/^\/balance(?:@\w+)?\\s+(\\d{1,20})$/i);
+
   try {
-    await telegramApi("sendMessage", {
-      chat_id: chatId,
-      text: "Добро пожаловать в MYSTIC NFT DROP! Нажми кнопку ниже, чтобы открыть приложение.",
-      reply_markup: {
-        inline_keyboard: [
-          [{ text: "✦ Открыть MYSTIC DROP", web_app: { url: PUBLIC_URL } }]
-        ]
+    if (/^\/start(?:@\\w+)?(?:\\s|$)/i.test(text)) {
+      await telegramApi("sendMessage", {
+        chat_id: chatId,
+        text: "Добро пожаловать в MYSTIC NFT DROP! Нажми кнопку ниже, чтобы открыть приложение.",
+        reply_markup: {
+          inline_keyboard: [
+            [{ text: "✦ Открыть MYSTIC DROP", web_app: { url: PUBLIC_URL } }]
+          ]
+        }
+      });
+      return;
+    }
+
+    if (giveMatch) {
+      if (!ADMIN_IDS.has(senderId)) {
+        await reply("⛔ Команда доступна только администратору.");
+        return;
       }
-    });
+      const targetId = giveMatch[1];
+      const amount = Number(giveMatch[2]);
+      if (!Number.isSafeInteger(amount) || amount < 1 || amount > 1000000) {
+        await reply("Укажи сумму от 1 до 1 000 000 MST.");
+        return;
+      }
+      const run = db.transaction(() => {
+        createUser.run(targetId, "Игрок", "");
+        db.prepare("UPDATE users SET balance=balance+?, updated_at=CURRENT_TIMESTAMP WHERE telegram_id=?").run(amount, targetId);
+        db.prepare("INSERT INTO admin_balance_logs(admin_telegram_id,target_telegram_id,amount) VALUES(?,?,?)").run(senderId,targetId,amount);
+        return getUser.get(targetId).balance;
+      });
+      const newBalance = run.immediate();
+      await reply("✅ Начислено " + amount.toLocaleString("ru-RU") + " MST пользователю " + targetId + ". Новый баланс: " + newBalance.toLocaleString("ru-RU") + " MST.");
+      return;
+    }
+
+    if (balanceMatch) {
+      if (!ADMIN_IDS.has(senderId)) {
+        await reply("⛔ Команда доступна только администратору.");
+        return;
+      }
+      const targetId = balanceMatch[1];
+      const user = getUser.get(targetId);
+      await reply(user
+        ? "Баланс пользователя " + targetId + ": " + user.balance.toLocaleString("ru-RU") + " MST."
+        : "Пользователь " + targetId + " ещё не зарегистрирован.");
+      return;
+    }
   } catch (err) {
-    console.error("Telegram /start reply failed:", err.message);
+    console.error("Telegram command failed:", err.message);
+    try { await reply("Не удалось выполнить команду. Проверь данные и попробуй ещё раз."); } catch {}
   }
 });
 async function configureTelegramBot() {
