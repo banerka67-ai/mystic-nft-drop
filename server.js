@@ -564,8 +564,7 @@ app.post("/telegram/webhook", async (req, res) => {
       text: "Добро пожаловать в MYSTIC NFT DROP! Нажми кнопку ниже, чтобы открыть приложение.",
       reply_markup: {
         inline_keyboard: [
-          [{ text: "✦ Открыть MYSTIC DROP", web_app: { url: PUBLIC_URL } }],
-          [{ text: "⭐ Купить Telegram Stars", url: "https://t.me/Starbuy1bot" }]
+          [{ text: "✦ Открыть MYSTIC DROP", web_app: { url: PUBLIC_URL } }]
         ]
       }
     });
