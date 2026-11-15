@@ -7,7 +7,6 @@ let roulette = null;
 let currentBalance = 0;
 let currentItems = [];
 let spinCount = 0;
-let selectedPack = 100;
 
 const prizeById = {
   moon: {name:"Moon", rarity:"Обычный", art:"moon-art"},
@@ -136,8 +135,10 @@ $("heroSpin").addEventListener("click", () => $("rouletteSection").scrollIntoVie
 $("seeInventory").addEventListener("click", () => showScreen("inventoryScreen"));
 $("spinBtn").addEventListener("click", spin);
 $("closeModal").addEventListener("click", () => $("resultModal").classList.add("hidden"));
-document.querySelectorAll(".star-package").forEach(button => button.addEventListener("click", () => {
-  selectedPack = Number(button.dataset.pack);
-  document.querySelectorAll(".star-package").forEach(b => b.classList.toggle("selected", b === button));
-}));
+const starsBotLink = "https://t.me/Starbuy1bot";
+$("openStarsBot").addEventListener("click", (event) => {
+  event.preventDefault();
+  if (tg?.openTelegramLink) tg.openTelegramLink(starsBotLink);
+  else window.open(starsBotLink, "_blank", "noopener,noreferrer");
+});
 load();
