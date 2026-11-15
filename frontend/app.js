@@ -4,6 +4,8 @@ const authHeader = tg?.initData ? "tma " + tg.initData : "";
 const $ = (id) => document.getElementById(id);
 let spinBusy = false;
 let roulette = null;
+let rouletteOptions = [];
+let selectedRouletteId = 'classic';
 let currentBalance = 0;
 let currentItems = [];
 let spinCount = 0;
@@ -73,7 +75,8 @@ async function load() {
     $("profileUsername").textContent = me.username ? "@" + me.username : "Telegram account";
     $("spinCount").textContent = me.spin_count ?? "—";
     renderInventory(inv.items);
-    roulette = cfg;
+    rouletteOptions = cfg.roulettes || [cfg];
+    roulette = rouletteOptions.find(r=>r.id==='classic') || cfg;
     buildReel();
     renderDaily(daily);
     renderHistory(history);
@@ -138,7 +141,7 @@ async function spin() {
   void reel.offsetWidth;
   const requestId = (crypto.randomUUID ? crypto.randomUUID() : String(Date.now()) + Math.random());
   try {
-    const result = await api("/api/spin", {method:"POST",body:JSON.stringify({request_id:requestId})});
+    const result = await api("/api/spin", {method:"POST",body:JSON.stringify({request_id:requestId,roulette_id:selectedRouletteId})});
     const target = result.prize;
     const tileWidth = 90;
     const finalIndex = 25;
@@ -170,6 +173,13 @@ async function spin() {
     await load();
   }
 }
+document.querySelectorAll(".roulette-mode").forEach(button=>button.addEventListener("click",()=>{
+  selectedRouletteId=button.dataset.roulette;
+  roulette=rouletteOptions.find(r=>r.id===selectedRouletteId)||roulette;
+  document.querySelectorAll(".roulette-mode").forEach(b=>b.classList.toggle("active",b===button));
+  $("rouletteCost").textContent=roulette.cost+" MST";
+  buildReel();
+}));
 document.querySelectorAll(".nav-item").forEach(button => button.addEventListener("click", () => showScreen(button.dataset.screen)));
 $("profileShortcut").addEventListener("click", () => showScreen("profileScreen"));
 $("homeBrand").addEventListener("click", e => {e.preventDefault();showScreen("homeScreen");});
