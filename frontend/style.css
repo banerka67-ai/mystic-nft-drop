@@ -156,3 +156,5 @@ body:after{opacity:.28;filter:blur(75px)}
 .prize-tile .gift-emoji{font-size:35px}
 .inventory-item .gift-emoji{font-size:29px}
 .result-art .gift-emoji{font-size:82px}
+
+.gift-emoji[hidden]{display:none}
