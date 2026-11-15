@@ -6,7 +6,7 @@ Telegram Mini App на Node.js 20 + Express + SQLite. Единственная p
 
 - Проверка подписи Telegram WebApp initData на сервере и ограничение срока действия данных.
 - Профиль, внутренний баланс MST и инвентарь.
-- Задание на подписку на @MysticDropNFT с проверкой через Telegram Bot API.
+- Задание на подписку на @MysticNftDrop с проверкой через Telegram Bot API.
 - Награды заданий: +10 MST за подписку и +5 MST за ежедневный вход.
 - Каталог подарков загружается из Telegram Bot API через `getAvailableGifts`.
 - Три рулетки (Classic / Premium / Legend) используют реальные ID доступных Telegram Gifts, серверный выбор результата, открытые вероятности и идемпотентность по `request_id`.
@@ -26,8 +26,8 @@ Telegram Mini App на Node.js 20 + Express + SQLite. Единственная p
 
 ## Настройка Telegram
 
-1. Добавь бота администратором канала @MysticDropNFT, чтобы он мог проверять участников.
-2. В Render добавь `BOT_TOKEN`, `ADMIN_IDS`, `REQUIRED_CHANNEL=@MysticDropNFT`, `DEV_MODE=false`.
+1. Добавь бота администратором канала @MysticNftDrop, чтобы он мог проверять участников.
+2. В Render добавь `BOT_TOKEN`, `ADMIN_IDS`, `REQUIRED_CHANNEL=@MysticNftDrop`, `DEV_MODE=false`.
 3. Укажи HTTPS URL Mini App через @BotFather и настрой кнопку меню/ссылку запуска.
 4. Не добавляй токен в GitHub и никогда не отправляй его в чат.
 
