@@ -10,3 +10,29 @@
 .stars-step strong{color:#eee7f5}
 .stars-bot-link{display:block;text-align:center;text-decoration:none;padding:15px 14px}
 .stars-bot-link span{float:right;font-size:15px;margin-top:-3px}
+
+
+/* Mystic Drop — новые игровые блоки */
+.daily-card{display:flex;align-items:center;gap:11px;margin:18px 0 10px;padding:13px;border:1px solid #4a3c58;border-radius:15px;background:linear-gradient(110deg,#292036,#17151e 72%);box-shadow:0 10px 28px #0004;position:relative;overflow:hidden}
+.daily-card:after{content:"";position:absolute;width:110px;height:110px;right:70px;top:-70px;border-radius:50%;background:#b58ce833;filter:blur(28px);pointer-events:none}
+.daily-icon{width:39px;height:39px;display:grid;place-items:center;border-radius:12px;background:linear-gradient(145deg,#6d5288,#30233d);color:#f3d99b;font-size:21px;box-shadow:0 0 20px #b58ce833}
+.daily-copy{min-width:0;flex:1}.daily-copy strong{display:block;font-size:11px;margin:4px 0}.daily-copy small{display:block;color:#a59bab;font-size:8px;line-height:1.4}
+.daily-claim{position:relative;z-index:1;border:1px solid #b497d0;border-radius:9px;padding:10px 11px;background:#5b426f;color:#fff;font-size:8px;font-weight:800;letter-spacing:.6px}
+.daily-claim:disabled{background:#29252f;border-color:#46404d;color:#8c8492}
+.daily-card.claimed{border-color:#354b40}.daily-card.claimed .daily-icon{background:linear-gradient(145deg,#426b56,#203a2c)}
+.feature-banner{display:flex;justify-content:space-between;align-items:center;margin:12px 0 3px;padding:15px 17px;border:1px solid #34455a;border-radius:15px;background:radial-gradient(circle at 88% 40%,#426b8655,transparent 35%),linear-gradient(110deg,#182633,#17151f);cursor:pointer;overflow:hidden}
+.feature-banner strong{display:block;font-size:17px;letter-spacing:1px;margin:5px 0}.feature-banner strong span{font-size:9px;color:#9dc9e6;border:1px solid #52718a;padding:3px 5px;border-radius:5px;vertical-align:middle}.feature-banner small{display:block;max-width:235px;color:#a1a9b2;font-size:9px;line-height:1.5}
+.feature-gem{font-size:42px;color:#a9d8f4;text-shadow:0 0 25px #75c5f5aa;animation:gemFloat 3s ease-in-out infinite}
+@keyframes gemFloat{0%,100%{transform:translateY(0) rotate(-7deg)}50%{transform:translateY(-5px) rotate(7deg)}}
+.mines-panel{padding:15px;border:1px solid #344354;border-radius:17px;background:linear-gradient(145deg,#1b222d,#11151d);box-shadow:0 14px 35px #0005}
+.mines-topline{display:flex;justify-content:space-between;align-items:center;margin-bottom:13px;color:#91a5b8;font-size:9px;letter-spacing:1.3px}.mines-topline b{color:#f2c5a2;margin-left:4px}.mines-topline span:last-child{color:#c4a4ed;font-size:14px;font-weight:800}
+.mines-grid{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:7px}
+.mine-cell{aspect-ratio:1;border:1px solid #42546a;border-radius:10px;background:linear-gradient(145deg,#29394b,#192431);color:#9ac7e8;font-size:18px;box-shadow:inset 0 1px #ffffff0d,0 4px 9px #0004;cursor:pointer;transition:transform .15s,border-color .15s,background .15s}
+.mine-cell:not(:disabled):active{transform:scale(.93)}.mine-cell:disabled{cursor:default}
+.mine-cell.mine-safe{background:radial-gradient(circle,#4e8b8c,#244b55);border-color:#75c8bd;color:#d8fff2;box-shadow:0 0 16px #4bc5a733}
+.mine-cell.mine-hit,.mine-cell.mine-bomb{background:radial-gradient(circle,#8b414d,#3c202c);border-color:#d47c87;color:#ffe2e2}
+.bet-label{display:block;margin:15px 0 6px;color:#a6a0ad;font-size:9px}.bet-input{width:100%;padding:12px;border:1px solid #3b4654;border-radius:9px;background:#0f141c;color:#f4f1f8;font:600 13px 'DM Sans',sans-serif;outline:none}.bet-input:focus{border-color:#8eb9d5}
+.mines-actions{display:grid;grid-template-columns:1fr 1fr;gap:8px}.mines-actions .primary-btn{font-size:8px;padding:13px 7px}.cashout-btn{background:linear-gradient(100deg,#416b5a,#6b9879);border-color:#83b99a}.cashout-btn:disabled{opacity:.4}
+.history-section{margin-top:23px}.history-list{display:grid;gap:7px}.history-row{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:11px 12px;border:1px solid #302a38;border-radius:11px;background:#17151e}.history-row strong{display:block;font-size:10px}.history-row small{display:block;margin-top:4px;color:#827b89;font-size:8px}.history-row>b{font-size:9px;color:#c7a8e1;white-space:nowrap}
+.toast{position:fixed;z-index:20;left:50%;bottom:85px;transform:translate(-50%,15px);opacity:0;pointer-events:none;padding:11px 16px;border:1px solid #82669a;border-radius:12px;background:#211a2b;color:#f2e7ff;font-size:10px;box-shadow:0 8px 28px #0009;transition:.25s}.toast.show{opacity:1;transform:translate(-50%,0)}
+@media(max-width:370px){.mines-grid{gap:5px}.mine-cell{border-radius:7px}.daily-card{gap:8px;padding:10px}.daily-claim{padding:9px 8px}}
