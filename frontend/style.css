@@ -33,3 +33,84 @@ body{
 .hero,.daily-card,.feature-banner,.gift-card,.roulette-card,.mines-panel,.account-card,.wallet-card{backdrop-filter:blur(8px)}
 .gift-card,.feature-banner,.daily-card,.roulette-card,.mines-panel{box-shadow:0 12px 34px #0005,0 1px 0 #ffffff08 inset}
 @media(prefers-reduced-motion:reduce){.app-shell:before,.app-shell:after{animation:none}}
+
+
+/* MYSTIC DROP — editorial gallery redesign */
+:root{color-scheme:dark;--bg:#0a0b10;--panel:#13151d;--panel2:#1a1d28;--line:#30313d;--text:#f4f0e8;--muted:#9999a7;--violet:#c5a4ff;--cyan:#9ee5dc;--gold:#e9c98b}
+html{background:#0a0b10}
+body{background:linear-gradient(180deg,#101019 0%,#090a0f 55%,#0c0d13 100%);font-family:Manrope,Arial,sans-serif}
+body:before{opacity:.2;background-size:510px 470px}
+body:after{opacity:.28;filter:blur(75px)}
+.app-shell{max-width:480px;padding:22px 18px calc(112px + env(safe-area-inset-bottom))}
+.topbar{height:56px;margin-bottom:23px}
+.brand-symbol{border-radius:50%;width:43px;height:43px;background:#e8d9ff;color:#211634;border:0;box-shadow:0 0 0 5px #c5a4ff14;font-size:19px}
+.brand{font-size:12px;letter-spacing:1.8px}.brand span{color:#c5a4ff}
+.subtitle{font-size:7px;letter-spacing:2.4px;color:#7f7d8d}
+.profile-shortcut{border-radius:50%;background:#1b1b27;border:1px solid #4b4659;box-shadow:0 0 0 4px #ffffff05}
+.hero{min-height:330px;border:1px solid #55446d;border-radius:8px;padding:30px 24px 24px;background:linear-gradient(130deg,#211a30 0%,#171723 55%,#17252b 100%);box-shadow:0 24px 65px #0008}
+.hero:before{width:310px;height:310px;right:-90px;top:-95px;background:radial-gradient(circle,#c29aff48,transparent 67%)}
+.hero:after{background:linear-gradient(90deg,#171522 0%,#171522d9 48%,transparent 100%)}
+.eyebrow{font-size:8px;letter-spacing:2.5px;color:#b9a9ce}
+.hero h1{font-size:34px;line-height:1.18;letter-spacing:-1.8px;margin:28px 0 14px}
+.hero h1 em{color:#d7b9ff}
+.hero p{font-size:11px;color:#c0bacb;line-height:1.9}
+.hero-button{border-radius:3px;padding:14px 17px;background:#d6b9ff;color:#20162b;border:0;box-shadow:0 8px 24px #b38bdf33;font-size:9px;letter-spacing:1px}
+.hero-button span{color:#372346}
+.hero-orb{right:-12px;top:84px;width:185px;height:185px;opacity:.88}
+.orb-core{width:78px;height:78px;border-radius:18px;transform:rotate(45deg);background:linear-gradient(145deg,#fff1cf,#d6a8ff 38%,#6954a7 75%);box-shadow:inset -12px -12px 19px #20152c99,inset 7px 7px 13px #fff9,0 0 55px #b88bff99}
+.orb-ring{width:160px;height:160px;border-style:dashed;border-color:#d9c4f677}
+.daily-card{margin:16px 0 12px;border-radius:7px;padding:14px;background:#171820;border:1px solid #35313e;box-shadow:none}
+.daily-icon{border-radius:5px;background:#d6b9ff;color:#251832;box-shadow:none}
+.daily-copy strong{font-size:12px}.daily-copy small{font-size:8px;color:#a7a2b1}
+.daily-claim{border-radius:3px;background:#c5a4ff;color:#21152c;border:0;padding:11px 13px}
+.feature-banner{border-radius:7px;padding:18px;background:linear-gradient(110deg,#172b2c,#171a22);border:1px solid #35514c;box-shadow:none}
+.feature-banner strong{font-size:18px;letter-spacing:1px}
+.feature-banner strong span{border-radius:2px;color:#a8eadb;border-color:#548c80}
+.feature-gem{font-size:48px;color:#a6e9d8;text-shadow:0 0 24px #7be0c788}
+.section-heading{margin:31px 2px 15px;align-items:center}
+.section-heading h2{font-size:15px;letter-spacing:-.5px}
+.section-count{font-size:7px;color:#aaa0b7;letter-spacing:2px}
+.gift-grid{gap:9px}
+.gift-card{border-radius:6px;padding:7px;background:#151720;border:1px solid #30313d;box-shadow:none}
+.gift-art{height:145px;border-radius:3px;background:radial-gradient(circle at 50% 43%,#59466d66,transparent 65%),linear-gradient(145deg,#24212d,#151720)}
+.gift-art:before{width:106px;height:106px;border:1px solid #d7c1ff2a;box-shadow:0 0 0 12px #ffffff04,0 0 0 25px #ffffff03}
+.gift-card:last-child .gift-art{height:96px;border-radius:3px}
+.gift-meta{padding:12px 4px 5px}
+.gift-meta strong{font-size:11px;letter-spacing:.2px}
+.gift-meta small{font-size:7px;letter-spacing:1.4px;color:#9b94a6}
+.rarity-dot{width:7px;height:7px}
+.roulette-modes{gap:5px}
+.roulette-mode{border-radius:4px;background:#151720;border-color:#363340;padding:13px 4px;font-size:8px;letter-spacing:1px}
+.roulette-mode.active{background:#d5baff;color:#21162d;border-color:#d5baff;box-shadow:0 6px 20px #b58be633}
+.roulette-mode.active small{color:#4e3a61}
+.roulette-card{border-radius:7px;padding:19px 12px 14px;background:#14161f;border:1px solid #3b3545;box-shadow:none}
+.reel-window{border-radius:4px;background:#0b0c12;border-color:#3a3445}
+.prize-tile{border-radius:4px;background:linear-gradient(155deg,#2a2534,#171720);border-color:#494052}
+.primary-btn{border-radius:4px;background:#d3b5ff;color:#21162d;border:0;box-shadow:0 8px 25px #b48be52b;letter-spacing:1.4px}
+.primary-btn:disabled{background:#34313d;color:#85808e}
+.hint{color:#918b9c}
+.empty-state{border-radius:5px;background:#151720;border:1px dashed #51475c;color:#a39aaf}
+.inventory-item{border-radius:5px;background:#151720;border-color:#34313d}
+.bottom-nav{width:min(480px,100%);background:#101118f2;border-top:1px solid #34303d;padding-top:13px;backdrop-filter:blur(24px)}
+.nav-item{font-size:8px;letter-spacing:.3px;color:#85818f}
+.nav-item span{font-size:20px}
+.nav-item.active{color:#d6b9ff}
+.page-heading{margin:17px 2px 25px}
+.page-heading h1{font-size:29px;letter-spacing:-1px}
+.page-heading p{color:#aaa5b2}
+.account-card,.wallet-card,.mines-panel{border-radius:6px;background:#151720;border-color:#393441;box-shadow:none}
+.account-avatar{border-radius:50%;background:#d6b9ff;color:#261a33;border:0}
+.wallet-card{background:linear-gradient(120deg,#282039,#191923);border-color:#655078}
+.wallet-value{font:700 31px Unbounded,Manrope,sans-serif;color:#f0e3ff}
+.wallet-currency{color:#d6b9ff}
+.stars-step,.history-row,.profile-stats div{border-radius:5px;background:#151720;border-color:#34313d}
+.stars-step>span{border-radius:4px;background:#d6b9ff;color:#24182f}
+.stars-step p,.topup-description{color:#b2acba}
+.mines-panel{background:linear-gradient(145deg,#19272a,#141820);border-color:#3b5b56}
+.mine-cell{border-radius:4px;background:linear-gradient(145deg,#304b4a,#1a2e30);border-color:#52736d;color:#b4eee0;box-shadow:none}
+.mine-cell.mine-safe{background:#b0ead9;color:#17372f;border-color:#d2fff0;box-shadow:0 0 18px #7ce0c355}
+.mine-cell.mine-hit,.mine-cell.mine-bomb{border-radius:4px}
+.bet-input{border-radius:4px;background:#0e1218;border-color:#43524f}
+.modal-card{border-radius:8px;background:linear-gradient(145deg,#292039,#151720);border-color:#725d86}
+.toast{border-radius:4px;background:#201a2b;border-color:#76618b}
+@media(max-width:370px){.hero{min-height:310px;padding:25px 18px}.hero h1{font-size:29px}.hero-orb{right:-48px;top:86px}.gift-art{height:125px}}
