@@ -10,6 +10,8 @@ const $ = id => document.getElementById(id);
 let tasks = [];
 let items = [];
 let roulettes = [];
+let shopGifts = [];
+let starsEnabled = false;
 let activeMode = "classic";
 let spinning = false;
 let mstPerStar = 2;
@@ -106,6 +108,10 @@ function setBalance(value) {
   $("spinBalance").textContent = Number(value).toLocaleString("ru-RU") + " MST";
 }
 
+function setPurchasedBalance(value) {
+  $("purchasedBalance").innerHTML = Number(value || 0).toLocaleString("ru-RU") + " <small>MST</small>";
+}
+
 function toast(message) {
   const element = $("toast");
   element.textContent = message;
@@ -120,14 +126,90 @@ function showScreen(id) {
 }
 
 function renderGifts() {
-  const gifts = roulettes.find(item => item.id === "classic")?.prizes || [];
-  $("giftGrid").innerHTML = gifts.map(prize =>
-    '<article class="gift-card"><div class="gift-art tg-gift-art">' + art(prize.id, prize.emoji) +
-    '</div><div class="gift-meta"><div><strong>' + esc(prize.name) + '</strong><small>' +
-    esc(prize.rarity) + " · " + Number(prize.star_count || 0) + " ⭐</small></div><i class=\"rarity-dot " +
-    (prize.rarity === "Легендарный" ? "legendary" : prize.rarity === "Эпический" ? "epic" : prize.rarity === "Редкий" ? "rare" : "") +
-    '"></i></div></article>'
-  ).join("");
+  $("giftGrid").innerHTML = shopGifts.map(gift =>
+    '<article class="gift-card"><div class="gift-art tg-gift-art">' + art(gift.id, gift.emoji) +
+    '</div><div class="gift-meta"><div><strong>' + esc(gift.name) + '</strong><small>' +
+    Number(gift.star_count).toLocaleString("ru-RU") + ' ⭐ · ' + Number(gift.cost_mst).toLocaleString("ru-RU") +
+    ' MST</small></div></div><button class="shop-buy" data-gift="' + esc(gift.id) + '">КУПИТЬ ЗА ' +
+    Number(gift.cost_mst).toLocaleString("ru-RU") + ' MST</button></article>'
+  ).join("") || '<div class="empty-state">Подарки временно недоступны</div>';
+  document.querySelectorAll(".shop-buy").forEach(button => button.addEventListener("click", () => purchaseGift(button.dataset.gift,button)));
+}
+
+async function purchaseGift(giftId,button) {
+  button.disabled = true;
+  const oldText = button.textContent;
+  button.textContent = "ПОКУПКА…";
+  try {
+    const result = await api("/api/shop/purchase", {
+      method:"POST",
+      body:JSON.stringify({gift_id:giftId,request_id:crypto.randomUUID()})
+    });
+    setPurchasedBalance(result.balance);
+    const inventory = await api("/api/inventory");
+    items = inventory.items || [];
+    renderInventory();
+    toast("Подарок добавлен в инвентарь");
+  } catch(error) {
+    toast(error.message);
+  } finally {
+    button.disabled = false;
+    button.textContent = oldText;
+  }
+}
+
+async function loadStarsPackages() {
+  try {
+    const result = await api("/api/stars/packages");
+    starsEnabled = !!result.enabled;
+    $("starsPackages").innerHTML = (result.packages || []).map(pack =>
+      '<button class="stars-package" data-package="' + esc(pack.id) + '" ' + (!starsEnabled ? "disabled" : "") +
+      '><strong>' + Number(pack.stars).toLocaleString("ru-RU") + ' ⭐</strong><span>+' +
+      Number(pack.mst).toLocaleString("ru-RU") + ' MST</span></button>'
+    ).join("");
+    $("starsPaymentNote").textContent = starsEnabled
+      ? "Официальная оплата Telegram Stars · 1 ⭐ = 2 MST. Купленные MST используются только для покупок в магазине."
+      : "Пакеты подготовлены. Приём платежей включится после подключения постоянного диска Render, чтобы платежи и начисления не терялись.";
+    document.querySelectorAll(".stars-package:not(:disabled)").forEach(button =>
+      button.addEventListener("click", () => createStarsInvoice(button.dataset.package,button))
+    );
+  } catch(error) {
+    $("starsPackages").innerHTML = '<div class="empty-state">' + esc(error.message) + '</div>';
+  }
+}
+
+async function createStarsInvoice(packageId,button) {
+  button.disabled = true;
+  try {
+    const result = await api("/api/stars/create-invoice", {
+      method:"POST",
+      body:JSON.stringify({package_id:packageId})
+    });
+    if (!tg?.openInvoice) {
+      toast("Открой Mini App внутри Telegram, чтобы оплатить Stars.");
+      return;
+    }
+    tg.openInvoice(result.invoice_url, async status => {
+      if (status === "paid") {
+        toast("Оплата прошла. Обновляем баланс…");
+        await refreshProfile();
+      } else if (status === "failed") {
+        toast("Не удалось провести оплату.");
+      } else if (status === "cancelled") {
+        toast("Оплата отменена.");
+      }
+    });
+  } catch(error) {
+    toast(error.message);
+  } finally {
+    button.disabled = false;
+  }
+}
+
+async function refreshProfile() {
+  const me = await api("/api/me");
+  setBalance(me.balance);
+  setPurchasedBalance(me.purchased_balance);
 }
 
 function renderReel(prizes, winner = null) {
@@ -423,10 +505,11 @@ function loadError(error) {
 
 async function load() {
   try {
-    const [me, inventory, rouletteData] = await Promise.all([
-      api("/api/me"), api("/api/inventory"), api("/api/roulette")
+    const [me, inventory, rouletteData, shopData] = await Promise.all([
+      api("/api/me"), api("/api/inventory"), api("/api/roulette"), api("/api/shop")
     ]);
     setBalance(me.balance);
+    setPurchasedBalance(me.purchased_balance);
     const initial = (me.name || "M").slice(0, 1).toUpperCase();
     $("avatar").textContent = initial;
     $("profileAvatar").textContent = initial;
@@ -436,8 +519,10 @@ async function load() {
     items = inventory.items || [];
     renderInventory();
     roulettes = rouletteData.roulettes || [];
+    shopGifts = shopData.gifts || [];
     mstPerStar = Number(rouletteData.mst_per_star) || 2;
     renderGifts();
+    await loadStarsPackages();
     selectMode("classic");
     await loadTasks();
     await restoreMines();
