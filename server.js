@@ -172,9 +172,7 @@ function buildRoulettes(gifts) {
   // The 250 MST case contains exactly two cheapest collectible gifts as low-weight entries.
   // The rest of the pool is made of more expensive limited gifts; if Telegram exposes
   // too few limited gifts, use the most expensive available catalog gifts as a fallback.
-  const premiumSource = limitedSorted.length >= 3
-    ? limitedSorted
-    : [...sorted.slice(Math.max(0, Math.floor(count * 0.55)))];
+  const premiumSource = limitedSorted.length >= 3 ? limitedSorted : sorted;
   const premiumPool = premiumSource.length >= 3 ? premiumSource : take(0.72);
   const cheapPremiumIds = new Set(premiumPool.slice(0, 2).map(g => String(g.id)));
   const nftPool = limitedSorted.length
