@@ -314,6 +314,25 @@ function requireBodyString(value, min=8, max=80) {
 }
 function apiError(res, err) { const constraint = String(err.code || "").startsWith("SQLITE_CONSTRAINT"); const status = err.status || (constraint ? 409 : 500); return res.status(status).json({ error: constraint ? "Эта операция уже выполнена или данные конфликтуют." : (err.message || "Внутренняя ошибка сервера") }); }
 
+// All reward paths share one transactional claim guard. This prevents re-entry,
+// double-clicks and concurrent requests from crediting the same task twice.
+function claimTaskReward(user, taskId, claimDay, reward) {
+  return db.transaction(() => {
+    createUser.run(user.id, user.first_name, user.username);
+    const existing = db.prepare(
+      "SELECT id FROM task_claims WHERE telegram_id=? AND task_id=? AND claim_day=?"
+    ).get(user.id, taskId, claimDay);
+    if (existing) {
+      return { already_claimed: true, reward: 0, balance: getUser.get(user.id).balance };
+    }
+    db.prepare("INSERT INTO task_claims(telegram_id,task_id,claim_day) VALUES(?,?,?)")
+      .run(user.id, taskId, claimDay);
+    db.prepare("UPDATE users SET balance=balance+?, updated_at=CURRENT_TIMESTAMP WHERE telegram_id=?")
+      .run(reward, user.id);
+    return { already_claimed: false, reward, balance: getUser.get(user.id).balance };
+  }).immediate();
+}
+
 app.get("/api/health", (req,res) => res.json({ ok: true, app: "Mystic NFT Drop", runtime: "node" }));
 app.get("/api/access", auth, requireSubscription, (req,res) => res.json({ ok: true, subscribed: true, channel: CHANNEL, demo: !!req.subscription.demo }));
 
@@ -334,18 +353,10 @@ app.get("/api/daily", auth, requireSubscription, (req,res) => {
 });
 app.post("/api/daily/claim", auth, requireSubscription, (req,res) => {
   try {
-    createUser.run(req.user.id,req.user.first_name,req.user.username);
     const today = new Date().toISOString().slice(0,10);
-    const run = db.transaction(() => {
-      db.prepare("INSERT INTO task_claims(telegram_id,task_id,claim_day) VALUES(?,'daily',?)").run(req.user.id,today);
-      db.prepare("UPDATE users SET balance=balance+5, updated_at=CURRENT_TIMESTAMP WHERE telegram_id=?").run(req.user.id);
-      return { reward:5, balance:getUser.get(req.user.id).balance };
-    });
-    res.json(run.immediate());
-  } catch(err) {
-    if (String(err.code || "").includes("CONSTRAINT")) return res.status(409).json({error:"Ежедневный бонус уже получен. Загляни завтра!"});
-    apiError(res,err);
-  }
+    const result = claimTaskReward(req.user, "daily", today, 5);
+    res.json({ ...result, message: result.already_claimed ? "Ежедневный бонус уже получен. Загляни завтра!" : "Бонус начислен." });
+  } catch(err) { apiError(res,err); }
 });
 
 app.get("/api/tasks", auth, (req,res) => {
@@ -368,14 +379,8 @@ app.post("/api/tasks/claim", auth, async (req,res) => {
     }
     const claimDay = taskId === "subscribe" ? "once" : new Date().toISOString().slice(0,10);
     const reward = taskId === "subscribe" ? 10 : 5;
-    const run = db.transaction(() => {
-      createUser.run(req.user.id, req.user.first_name, req.user.username);
-      db.prepare("INSERT INTO task_claims(telegram_id,task_id,claim_day) VALUES(?,?,?)").run(req.user.id,taskId,claimDay);
-      db.prepare("UPDATE users SET balance=balance+?, updated_at=CURRENT_TIMESTAMP WHERE telegram_id=?").run(reward,req.user.id);
-      return getUser.get(req.user.id).balance;
-    });
-    const balance = run.immediate();
-    res.json({ok:true,reward,balance,task_id:taskId});
+    const result = claimTaskReward(req.user, taskId, claimDay, reward);
+    res.json({ ok:true, ...result, task_id:taskId });
   } catch(err) { apiError(res,err); }
 });
 
