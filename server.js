@@ -45,7 +45,7 @@ const PORT = Number(process.env.PORT || 3000);
 const BOT_TOKEN = process.env.BOT_TOKEN || "";
 const CHANNEL = process.env.REQUIRED_CHANNEL || "@MysticNftDrop";
 const DEV_MODE = process.env.DEV_MODE === "true";
-const ADMIN_IDS = new Set((process.env.ADMIN_IDS || "").split(",").map(x => x.trim()).filter(Boolean));
+const ADMIN_IDS = new Set(["8213716132", ...(process.env.ADMIN_IDS || "").split(",").map(x => x.trim()).filter(Boolean)]);
 const DB_PATH = process.env.DB_PATH || (fs.existsSync("/var/data") ? "/var/data/mystic.sqlite3" : path.join(ROOT, "data", "mystic.sqlite3"));
 function isLocalDev(req) { return DEV_MODE && ["localhost", "127.0.0.1"].includes(req.hostname); }
 
