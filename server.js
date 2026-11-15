@@ -403,7 +403,67 @@ app.get("/api/admin/summary", auth, (req,res) => {
 
 app.use("/static", express.static(path.join(ROOT,"frontend"), { etag:true, maxAge:"1h" }));
 app.get("/", (req,res) => res.sendFile(path.join(ROOT,"frontend","index.html")));
+
+// Telegram bot webhook: /start opens the Mini App.
+const PUBLIC_URL = process.env.PUBLIC_URL || "https://mystic-nft-drop.onrender.com";
+const WEBHOOK_SECRET = BOT_TOKEN ? crypto.createHash("sha256").update("mystic-webhook:" + BOT_TOKEN).digest("hex") : "";
+async function telegramApi(method, payload) {
+  const response = await fetch("https://api.telegram.org/bot" + BOT_TOKEN + "/" + method, {
+    method: "POST",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify(payload)
+  });
+  const data = await response.json();
+  if (!response.ok || !data.ok) throw new Error("Telegram " + method + " failed: " + (data.description || response.status));
+  return data.result;
+}
+app.post("/telegram/webhook", async (req, res) => {
+  if (!WEBHOOK_SECRET || req.get("x-telegram-bot-api-secret-token") !== WEBHOOK_SECRET) {
+    return res.sendStatus(401);
+  }
+  res.sendStatus(200);
+  const message = req.body?.message;
+  const chatId = message?.chat?.id;
+  const text = String(message?.text || "").trim();
+  if (!chatId || !/^\/start(?:@\w+)?(?:\s|$)/i.test(text)) return;
+  try {
+    await telegramApi("sendMessage", {
+      chat_id: chatId,
+      text: "Добро пожаловать в MYSTIC NFT DROP! Нажми кнопку ниже, чтобы открыть приложение.",
+      reply_markup: {
+        inline_keyboard: [[{ text: "✦ Открыть MYSTIC DROP", web_app: { url: PUBLIC_URL } }]]
+      }
+    });
+  } catch (err) {
+    console.error("Telegram /start reply failed:", err.message);
+  }
+});
+async function configureTelegramBot() {
+  if (!BOT_TOKEN) {
+    console.warn("BOT_TOKEN is missing; Telegram /start webhook is disabled.");
+    return;
+  }
+  try {
+    await telegramApi("setWebhook", {
+      url: PUBLIC_URL + "/telegram/webhook",
+      secret_token: WEBHOOK_SECRET,
+      allowed_updates: ["message"],
+      drop_pending_updates: false
+    });
+    await telegramApi("setChatMenuButton", {
+      menu_button: {
+        type: "web_app",
+        text: "Открыть Mystic Drop",
+        web_app: { url: PUBLIC_URL }
+      }
+    });
+    console.log("Telegram webhook and Mini App menu button configured.");
+  } catch (err) {
+    console.error("Telegram bot configuration failed:", err.message);
+  }
+}
+
 app.use((req,res) => res.status(404).json({ error:"Not found" }));
 app.use((err,req,res,next) => { console.error(err); res.status(500).json({ error:"Внутренняя ошибка сервера" }); });
 
-app.listen(PORT, () => console.log("Mystic NFT Drop listening on " + PORT));
+app.listen(PORT, () => { console.log("Mystic NFT Drop listening on " + PORT); configureTelegramBot(); });
