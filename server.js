@@ -47,6 +47,7 @@ const CHANNEL = process.env.REQUIRED_CHANNEL || "@MysticDropNFT";
 const DEV_MODE = process.env.DEV_MODE === "true";
 const ADMIN_IDS = new Set((process.env.ADMIN_IDS || "").split(",").map(x => x.trim()).filter(Boolean));
 const DB_PATH = process.env.DB_PATH || (fs.existsSync("/var/data") ? "/var/data/mystic.sqlite3" : path.join(ROOT, "data", "mystic.sqlite3"));
+function isLocalDev(req) { return DEV_MODE && ["localhost", "127.0.0.1"].includes(req.hostname); }
 
 fs.mkdirSync(path.dirname(DB_PATH), { recursive: true });
 const db = new Database(DB_PATH);
@@ -170,7 +171,7 @@ function validateInitData(initData) {
 
 function auth(req, res, next) {
   try {
-    if (DEV_MODE && req.get("x-dev-mode") === "true") {
+    if (isLocalDev(req)) {
       req.user = { id: "1", first_name: "Тестовый игрок", username: "demo" };
     } else {
       const header = req.get("authorization") || "";
@@ -181,8 +182,8 @@ function auth(req, res, next) {
   } catch (err) { res.status(err.status || 401).json({ error: err.message }); }
 }
 
-async function telegramMember(userId) {
-  if (DEV_MODE) return { subscribed: true, status: "member", demo: true };
+async function telegramMember(userId, allowLocalDev = false) {
+  if (allowLocalDev && DEV_MODE) return { subscribed: true, status: "member", demo: true };
   if (!BOT_TOKEN) throw Object.assign(new Error("Администратор ещё не настроил Telegram-бота"), { status: 503 });
   const url = "https://api.telegram.org/bot" + BOT_TOKEN + "/getChatMember";
   const response = await fetch(url, {
@@ -196,7 +197,7 @@ async function telegramMember(userId) {
 }
 
 function requireSubscription(req, res, next) {
-  telegramMember(req.user.id).then(result => {
+  telegramMember(req.user.id, isLocalDev(req)).then(result => {
     if (!result.subscribed) return res.status(403).json({ error: "Сначала подпишись на канал " + CHANNEL, subscription_required: true, channel: CHANNEL });
     req.subscription = result;
     next();
@@ -263,7 +264,7 @@ app.post("/api/tasks/claim", auth, async (req,res) => {
     const taskId = req.body?.task_id;
     if (!["subscribe","daily"].includes(taskId)) return res.status(400).json({error:"Неизвестное задание"});
     if (taskId === "subscribe") {
-      const membership = await telegramMember(req.user.id);
+      const membership = await telegramMember(req.user.id, isLocalDev(req));
       if (!membership.subscribed) return res.status(403).json({error:"Сначала подпишись на @MysticDropNFT, затем нажми «Проверить»."});
     }
     const claimDay = taskId === "subscribe" ? "once" : new Date().toISOString().slice(0,10);
