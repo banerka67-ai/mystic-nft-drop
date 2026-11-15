@@ -14,21 +14,23 @@ let minesActive = false;
 let minesRevealed = 0;
 
 const prizeById = {
-  moon: {name:"Moon", rarity:"Обычный", art:"moon-art"},
-  star: {name:"Star", rarity:"Обычный", art:"star-art"},
-  crystal: {name:"Crystal", rarity:"Редкий", art:"crystal-art"},
-  crown: {name:"Crown", rarity:"Эпический", art:"crown-art"},
-  dragon: {name:"Mystic Dragon", rarity:"Легендарный", art:"dragon-art"}
+  teddy_bear: {name:"Teddy Bear", giftId:"5170233102089322756"},
+  red_rose: {name:"Red Rose", giftId:"5168103777563050263"},
+  gift_box: {name:"Gift Box", giftId:"5170250947678437525"},
+  rocket: {name:"Rocket", giftId:"5170564780938756245"},
+  diamond_ring: {name:"Diamond Ring", giftId:"5170690322832818290"}
 };
-function artClass(prize) {
-  const known = prizeById[prize.id];
-  if (known) return known.art;
-  const byName = Object.values(prizeById).find(p => p.name === prize.name);
-  return byName?.art || "crystal-art";
+function giftImageUrl(prize) {
+  const item = prizeById[prize.id] || Object.values(prizeById).find(p => p.name === prize.name);
+  return item ? "https://denzyve.github.io/cdn-telegram-gifts/assets/png/gift_" + item.giftId + ".png" : "";
 }
 function artMarkup(prize, extraClass="") {
-  return `<div class="tile-art ${extraClass}"><div class="artifact ${artClass(prize)}"></div></div>`;
+  const url = giftImageUrl(prize);
+  return url
+    ? `<div class="tile-art tg-gift-art ${extraClass}"><img src="${url}" alt="${escapeHtml(prize.name)}" loading="lazy" onerror="this.parentElement.classList.add('image-missing');this.remove()"></div>`
+    : `<div class="tile-art ${extraClass}"><div class="artifact crystal-art"></div></div>`;
 }
+function artClass(prize) { return "crystal-art"; }
 async function api(path, options = {}) {
   const response = await fetch(path, {
     ...options,
@@ -46,7 +48,7 @@ function renderInventory(items) {
   currentItems = items || [];
   const markup = currentItems.length ? currentItems.map(item => {
     const prize = {id:item.prize_id, name:item.prize_name};
-    return `<div class="inventory-item"><div class="item-art"><div class="artifact ${artClass(prize)}"></div></div><div><strong>${escapeHtml(item.prize_name)}</strong><small>${escapeHtml(item.rarity)} · ${new Date(item.created_at + "Z").toLocaleDateString("ru-RU")}</small></div></div>`;
+    return `<div class="inventory-item"><div class="item-art">${artMarkup(prize)}</div><div><strong>${escapeHtml(item.prize_name)}</strong><small>${escapeHtml(item.rarity)} · ${new Date(item.created_at + "Z").toLocaleDateString("ru-RU")}</small></div></div>`;
   }).join("") : '<div class="empty-state">Твои находки появятся здесь</div>';
   $("inventory").innerHTML = markup;
   $("inventoryFull").innerHTML = markup;
@@ -125,7 +127,7 @@ async function cashoutMines(){
 }
 function toast(message){let el=$("toast");if(!el){el=document.createElement("div");el.id="toast";el.className="toast";document.body.appendChild(el);}el.textContent=message;el.classList.add("show");setTimeout(()=>el.classList.remove("show"),2300);}
 function showResult(prize) {
-  $("resultArt").innerHTML = `<div class="artifact ${artClass(prize)}"></div>`;
+  $("resultArt").innerHTML = artMarkup(prize);
   $("resultName").textContent = prize.name;
   $("resultRarity").textContent = prize.rarity;
   $("resultModal").classList.remove("hidden");
