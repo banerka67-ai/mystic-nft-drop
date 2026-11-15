@@ -149,3 +149,10 @@ body:after{opacity:.28;filter:blur(75px)}
 .task-footnote{font-size:8px}
 .bottom-nav{justify-content:space-around;padding-left:8px;padding-right:8px}
 .nav-item{min-width:58px;font-size:8px}
+
+
+/* Telegram live-catalog gift emoji fallback */
+.gift-emoji{position:relative;z-index:1;display:grid;place-items:center;width:100%;height:100%;font-size:clamp(38px,11vw,64px);line-height:1;filter:drop-shadow(0 10px 14px #0009)}
+.prize-tile .gift-emoji{font-size:35px}
+.inventory-item .gift-emoji{font-size:29px}
+.result-art .gift-emoji{font-size:82px}
