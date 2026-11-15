@@ -15,6 +15,7 @@ let spinning = false;
 let mstPerStar = 2;
 let mineGame = null;
 let mineBusy = false;
+let mineMaxBet = 10000;
 let mineFinishedMessage = "";
 
 async function api(path, options = {}) {
@@ -252,6 +253,8 @@ function renderMines() {
 async function restoreMines() {
   try {
     const result = await api("/api/mines/active");
+    mineMaxBet = Number(result.max_bet) || mineMaxBet;
+    $("mineBet").max = String(mineMaxBet);
     if (result.active) {
       mineGame = {
         game_id: result.game_id,
@@ -272,8 +275,8 @@ async function restoreMines() {
 async function startMines() {
   if (mineBusy || mineGame?.status === "active") return;
   const bet = Number($("mineBet").value);
-  if (!Number.isSafeInteger(bet) || bet < 1 || bet > 10000) {
-    toast("Ставка должна быть от 1 до 10000 MST");
+  if (!Number.isSafeInteger(bet) || bet < 1 || bet > mineMaxBet) {
+    toast("Ставка должна быть от 1 до " + mineMaxBet + " MST");
     return;
   }
   mineBusy = true;
@@ -284,6 +287,8 @@ async function startMines() {
       body: JSON.stringify({ bet })
     });
     setBalance(result.balance);
+    mineMaxBet = Number(result.max_bet) || mineMaxBet;
+    $("mineBet").max = String(mineMaxBet);
     mineGame = {
       game_id: result.game_id,
       bet: result.bet,
