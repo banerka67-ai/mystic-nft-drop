@@ -343,7 +343,7 @@ app.get("/api/roulette", auth, async (req,res) => {
     res.json({
       roulettes: rouletteList,
       ...rouletteList[0],
-      gift_count: gifts.length,
+      gift_count: gifts.length,\n      mst_per_star: MST_PER_STAR,
       notice: "Каталог загружается из Telegram Bot API. Выигрыш пока сохраняется в виртуальном инвентаре приложения."
     });
   } catch(err) { apiError(res,err); }
