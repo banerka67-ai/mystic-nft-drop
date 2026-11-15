@@ -188,7 +188,7 @@ function apiError(res, err) { return res.status(err.status || 500).json({ error:
 app.get("/api/health", (req,res) => res.json({ ok: true, app: "Mystic NFT Drop", runtime: "node" }));
 app.get("/api/access", auth, requireSubscription, (req,res) => res.json({ ok: true, subscribed: true, channel: CHANNEL, demo: !!req.subscription.demo }));
 
-app.get("/api/me", auth, requireSubscription, (req,res) => {
+app.get("/api/me", auth, (req,res) => {
   const u = req.user;
   createUser.run(u.id, u.first_name, u.username);
   db.prepare("UPDATE users SET first_name=?, username=?, updated_at=CURRENT_TIMESTAMP WHERE telegram_id=?").run(u.first_name,u.username,u.id);
@@ -223,7 +223,7 @@ app.post("/api/daily/claim", auth, requireSubscription, (req,res) => {
   } catch(err) { apiError(res,err); }
 });
 
-app.get("/api/tasks", auth, requireSubscription, (req,res) => {
+app.get("/api/tasks", auth, (req,res) => {
   createUser.run(req.user.id, req.user.first_name, req.user.username);
   const today = new Date().toISOString().slice(0,10);
   const claimed = db.prepare("SELECT task_id, claim_day FROM task_claims WHERE telegram_id=?").all(req.user.id);
@@ -233,10 +233,14 @@ app.get("/api/tasks", auth, requireSubscription, (req,res) => {
     { id:"daily", title:"Ежедневный вход", description:"Заходи в Mystic Drop каждый день.", reward:25, claimed:has("daily",today), repeat:"daily" }
   ]});
 });
-app.post("/api/tasks/claim", auth, requireSubscription, (req,res) => {
+app.post("/api/tasks/claim", auth, async (req,res) => {
   try {
     const taskId = req.body?.task_id;
     if (!["subscribe","daily"].includes(taskId)) return res.status(400).json({error:"Неизвестное задание"});
+    if (taskId === "subscribe") {
+      const membership = await telegramMember(req.user.id);
+      if (!membership.subscribed) return res.status(403).json({error:"Сначала подпишись на @MysticDropNFT, затем нажми «Проверить»."});
+    }
     const claimDay = taskId === "subscribe" ? "once" : new Date().toISOString().slice(0,10);
     const reward = taskId === "subscribe" ? 100 : 25;
     const run = db.transaction(() => {
@@ -287,7 +291,7 @@ app.post("/api/spin", auth, requireSubscription, (req,res) => {
   } catch(err) { apiError(res,err); }
 });
 
-app.get("/api/inventory", auth, requireSubscription, (req,res) => {
+app.get("/api/inventory", auth, (req,res) => {
   const rows = db.prepare("SELECT prize_id, prize_name, emoji, rarity, source, created_at FROM inventory WHERE telegram_id=? ORDER BY id DESC LIMIT 100").all(req.user.id);
   res.json({ items: rows });
 });
