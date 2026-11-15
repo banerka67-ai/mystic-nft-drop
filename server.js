@@ -175,15 +175,15 @@ function buildRoulettes(gifts) {
   const limited = sorted.filter(g => Number.isFinite(g.limited_count) && g.limited_count > 0);
   const limitedSorted = [...limited].sort((a,b) => Number(a.star_count || 0) - Number(b.star_count || 0));
 
-  // The 250 MST case contains exactly two cheapest collectible gifts as low-weight entries.
-  // The rest of the pool is made of more expensive limited gifts; if Telegram exposes
-  // too few limited gifts, use the most expensive available catalog gifts as a fallback.
-  const premiumSource = limitedSorted.length >= 3 ? limitedSorted : sorted;
-  const premiumPool = premiumSource.length >= 3 ? premiumSource : take(0.72);
-  const cheapPremiumIds = new Set(premiumPool.slice(0, 2).map(g => String(g.id)));
-  const nftPool = limitedSorted.length
+  const premiumPool = take(0.72);
+
+  // The 500 MST / ≈250 Stars NFT case uses collectible limited gifts.
+  // Its two cheapest NFT entries are deliberately assigned very low weights;
+  // the remaining, more expensive collectibles form the rare prize pool.
+  const nftPool = limitedSorted.length >= 3
     ? limitedSorted
-    : sorted.slice(Math.max(0, Math.floor(count * 0.65)));
+    : sorted.slice(Math.max(0, Math.floor(count * 0.55)));
+  const cheapNftIds = new Set(nftPool.slice(0, 2).map(g => String(g.id)));
 
   const pools = {
     classic: take(0.4),
@@ -200,12 +200,15 @@ function buildRoulettes(gifts) {
       let rarity = percentile >= .9 ? "Легендарный" : percentile >= .7 ? "Эпический" : percentile >= .4 ? "Редкий" : "Обычный";
       let weight = Math.max(1, Math.round(10000 / Math.pow(index + 1, mode.exponent)));
 
-      if (mode.id === "premium") {
-        const isCheapNft = cheapPremiumIds.has(String(gift.id));
-        rarity = isCheapNft ? "Редкий NFT" : "Легендарный NFT";
-        // Cheap NFT prizes have deliberately reduced odds; expensive collectibles
-        // remain the main rare prizes in this case.
-        weight = isCheapNft ? 1 : Math.max(4, Math.round(90 / Math.pow(index - 1, 1.15)));
+      if (mode.id === "legendary") {
+        const isCheapNft = cheapNftIds.has(String(gift.id));
+        const isLimitedGift = Number.isFinite(gift.limited_count) && gift.limited_count > 0;
+        rarity = isLimitedGift
+          ? (isCheapNft ? "Редкий NFT" : "Легендарный NFT")
+          : (isCheapNft ? "Редкий подарок" : "Легендарный подарок");
+        // The two cheapest NFT prizes have reduced odds. Higher-value items
+        // receive the main share of the NFT case's draw weight.
+        weight = isCheapNft ? 1 : Math.max(4, Math.round(90 / Math.pow(Math.max(1, index - 1), 1.15)));
       }
 
       return {
