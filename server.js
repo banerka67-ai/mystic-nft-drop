@@ -50,6 +50,20 @@ const DB_PATH = process.env.DB_PATH || (fs.existsSync("/var/data") ? "/var/data/
 function isLocalDev(req) { return DEV_MODE && ["localhost", "127.0.0.1"].includes(req.hostname); }
 
 fs.mkdirSync(path.dirname(DB_PATH), { recursive: true });
+// When a Render persistent disk is first attached, preserve the old SQLite
+// database (and its WAL files) if the previous local database is still present.
+if (DB_PATH.startsWith("/var/data/") && !fs.existsSync(DB_PATH)) {
+  const legacyDb = path.join(ROOT,"data","mystic.sqlite3");
+  if (fs.existsSync(legacyDb)) {
+    fs.copyFileSync(legacyDb,DB_PATH);
+    for (const suffix of ["-wal","-shm"]) {
+      if (fs.existsSync(legacyDb + suffix)) fs.copyFileSync(legacyDb + suffix,DB_PATH + suffix);
+    }
+    console.log("Migrated existing SQLite database to persistent disk.");
+  }
+}
+const HAS_PERSISTENT_DISK = fs.existsSync("/var/data") &&
+  fs.statSync("/var/data").dev !== fs.statSync("/").dev;
 const db = new Database(DB_PATH);
 db.pragma("journal_mode = WAL");
 db.pragma("foreign_keys = ON");
@@ -146,7 +160,7 @@ const STARS_PACKAGES = {
   stars_1000: { id:"stars_1000", stars:1000, mst:2000, title:"1000 Stars" }
 };
 // Real payments are disabled until a persistent Render disk is mounted.
-const STARS_ENABLED = process.env.STARS_ENABLED === "true" && DB_PATH.startsWith("/var/data/");
+const STARS_ENABLED = process.env.STARS_ENABLED === "true" && DB_PATH.startsWith("/var/data/") && HAS_PERSISTENT_DISK;
 const parsedMinesRtp = Number(process.env.MINES_RTP ?? 0.96);
 const MINES_RTP = Number.isFinite(parsedMinesRtp) ? Math.min(0.99, Math.max(0.5, parsedMinesRtp)) : 0.96;
 const parsedMinesMaxBet = Number(process.env.MINES_MAX_BET ?? 10000);
