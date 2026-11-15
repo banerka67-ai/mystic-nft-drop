@@ -1,71 +1,70 @@
 <!doctype html>
 <html lang="ru">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
-  <meta name="theme-color" content="#0b0b10">
-  <title>Mystic Drop — задания</title>
-  <script src="https://telegram.org/js/telegram-web-app.js"></script>
-  <link rel="stylesheet" href="/static/style.css?v=tasks-2">
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<meta name="theme-color" content="#0a0b10"><title>MYSTIC NFT DROP — магазин подарков</title>
+<script src="https://telegram.org/js/telegram-web-app.js"></script>
+<link rel="stylesheet" href="/static/style.css?v=gift-shop-3">
 </head>
-<body>
-  <div class="app-shell">
-    <header class="topbar">
-      <a class="brand-lockup" href="#" id="homeBrand">
-        <div class="brand-symbol">M</div>
-        <div><div class="brand">MYSTIC<span>DROP</span></div><div class="subtitle">COLLECT · COMPLETE · REWARD</div></div>
-      </a>
-      <button class="profile-shortcut" id="profileShortcut" aria-label="Профиль"><span id="avatar">M</span></button>
-    </header>
-    <main>
-      <section class="screen active" id="homeScreen">
-        <section class="hero tasks-hero">
-          <div class="hero-copy">
-            <div class="eyebrow"><i></i> MYSTIC REWARDS</div>
-            <h1>Выполняй<br><em>задания.</em></h1>
-            <p>Простые действия — награды на твой баланс.</p>
-            <div class="task-balance"><span>ТВОЙ БАЛАНС</span><strong id="homeBalance">0 <small>MST</small></strong></div>
-          </div>
-          <div class="hero-orb"><div class="orb-core"></div><div class="orb-ring"></div></div>
-        </section>
-        <section class="task-summary">
-          <div><span class="eyebrow">ДОСТУПНЫЕ ЗАДАНИЯ</span><strong id="taskCount">Загрузка…</strong></div>
-          <span class="task-summary-icon">✦</span>
-        </section>
-        <section class="section-heading"><div><div class="eyebrow">GET REWARDS</div><h2>Список заданий</h2></div></section>
-        <div class="tasks-list" id="taskList"><div class="empty-state">Загружаем задания…</div></div>
-        <p class="hint task-footnote">MST — внутренняя виртуальная валюта приложения. Это не деньги и не Telegram Stars.</p>
-      </section>
-      <section class="screen" id="inventoryScreen">
-        <div class="page-heading"><div class="eyebrow">YOUR COLLECTION</div><h1>Инвентарь</h1><p>Подарки, полученные в приложении.</p></div>
-        <div class="inventory-list inventory-full" id="inventoryFull"><div class="empty-state">Пока здесь пусто</div></div>
-      </section>
-      <section class="screen" id="profileScreen">
-        <div class="page-heading"><div class="eyebrow">ACCOUNT</div><h1>Профиль</h1><p>Твой аккаунт Mystic Drop.</p></div>
-        <section class="account-card">
-          <div class="account-avatar" id="profileAvatar">M</div>
-          <div><strong id="profileName">Игрок Mystic</strong><small id="profileUsername">Telegram account</small></div>
-          <span class="account-mark">✦</span>
-        </section>
-        <section class="wallet-card">
-          <div class="wallet-top"><span>ТВОЙ БАЛАНС</span><span class="wallet-currency">MST</span></div>
-          <div class="wallet-value" id="balance">0 <small>MST</small></div>
-          <div class="wallet-bottom"><span>Внутренняя валюта Mystic</span><span id="itemCount">0 предметов</span></div>
-        </section>
-        <section class="profile-stats">
-          <div><strong id="taskDone">0</strong><small>Получено наград</small></div>
-          <div><strong id="profileItemCount">0</strong><small>Подарков</small></div>
-        </section>
-        <p class="payment-note">Баланс MST и предметы являются виртуальными. Пополнение через сторонние сервисы, вывод средств и автоматическая выдача Telegram Gifts не подключены.</p>
-      </section>
-    </main>
-    <nav class="bottom-nav">
-      <button class="nav-item active" data-screen="homeScreen"><span>✦</span>Задания</button>
-      <button class="nav-item" data-screen="inventoryScreen"><span>◇</span>Инвентарь</button>
-      <button class="nav-item" data-screen="profileScreen"><span>○</span>Профиль</button>
-    </nav>
-  </div>
-  <div class="toast" id="toast"></div>
-  <script src="/static/app.js?v=tasks-2"></script>
-</body>
-</html>
+<body><div class="app-shell">
+<header class="topbar">
+<a class="brand-lockup" href="#" id="homeBrand"><div class="brand-symbol">M</div><div><div class="brand">MYSTIC<span>DROP</span></div><div class="subtitle">TELEGRAM GIFTS · DROP</div></div></a>
+<button class="profile-shortcut" id="profileShortcut" aria-label="Профиль"><span id="avatar">M</span></button>
+</header>
+<main>
+<section class="screen active" id="homeScreen">
+<section class="hero">
+<div class="hero-copy"><div class="eyebrow"><i></i> MYSTIC GIFT SHOP</div>
+<h1>Лови свой<br><em>Telegram Gift.</em></h1><p>Выбирай рулетку и испытай удачу.</p>
+<div class="task-balance"><span>ТВОЙ БАЛАНС</span><strong id="homeBalance">0 <small>MST</small></strong></div>
+<button class="hero-button" id="goRoulette">КРУТИТЬ РУЛЕТКУ <span>↗</span></button></div>
+<div class="hero-orb"><div class="orb-core"></div><div class="orb-ring"></div></div>
+</section>
+<section class="section-heading"><div><div class="eyebrow">COLLECTIBLE GIFTS</div><h2>Подарки в магазине</h2></div><span class="section-count">TELEGRAM GIFTS</span></section>
+<div class="gift-grid" id="giftGrid"><div class="empty-state">Загружаем подарки…</div></div>
+<section class="roulette-section" id="rouletteSection">
+<div class="section-heading"><div><div class="eyebrow">TRY YOUR LUCK</div><h2>Рулетка подарков</h2></div><span class="live-tag">● LIVE DROP</span></div>
+<div class="roulette-modes" id="rouletteModes">
+<button class="roulette-mode active" data-mode="classic">CLASSIC<small>100 MST</small></button>
+<button class="roulette-mode" data-mode="premium">PREMIUM<small>250 MST</small></button>
+<button class="roulette-mode" data-mode="legendary">LEGEND<small>500 MST</small></button>
+</div>
+<div class="roulette-card">
+<div class="roulette-caption"><span>ПРИЗОВАЯ ЛЕНТА</span><span id="rouletteTitle">MYSTIC CLASSIC</span></div>
+<div class="pointer"></div><div class="reel-window"><div class="reel" id="reel"></div></div>
+<div class="roulette-bottom"><span>Стоимость: <strong id="spinCost">100 MST</strong></span><span>Баланс: <strong id="spinBalance">0 MST</strong></span></div>
+<div class="odds-list" id="oddsList"></div>
+<button class="primary-btn" id="spinButton">КРУТИТЬ <span>✦</span></button>
+<p class="hint">Вероятности показаны открыто. Выигрыш сохраняется в инвентаре приложения.</p>
+</div>
+</section>
+<section class="inventory-heading section-heading"><div><div class="eyebrow">YOUR COLLECTION</div><h2>Последние выигрыши</h2></div><button class="text-link" id="openInventory">Весь инвентарь ↗</button></section>
+<div class="inventory-list" id="homeInventory"><div class="empty-state">Пока нет выигрышей</div></div>
+</section>
+<section class="screen" id="tasksScreen">
+<div class="page-heading"><div class="eyebrow">BONUS CENTER</div><h1>Задания</h1><p>Выполняй простые действия и получай MST — внутреннюю валюту, эквивалентную звёздам по курсу проекта.</p></div>
+<div class="task-summary"><div><span class="eyebrow">ДОСТУПНЫЕ ЗАДАНИЯ</span><strong id="taskCount">Загрузка…</strong></div><span class="task-summary-icon">✦</span></div>
+<div class="tasks-list" id="taskList"><div class="empty-state">Загружаем задания…</div></div>
+<p class="hint task-footnote">MST — внутренняя валюта приложения, не реальные Telegram Stars.</p>
+</section>
+<section class="screen" id="inventoryScreen">
+<div class="page-heading"><div class="eyebrow">YOUR COLLECTION</div><h1>Инвентарь</h1><p>Подарки, выпавшие в рулетке.</p></div>
+<div class="inventory-list inventory-full" id="inventoryFull"><div class="empty-state">Пока здесь пусто</div></div>
+</section>
+<section class="screen" id="profileScreen">
+<div class="page-heading"><div class="eyebrow">ACCOUNT</div><h1>Профиль</h1><p>Твой аккаунт Mystic Drop.</p></div>
+<section class="account-card"><div class="account-avatar" id="profileAvatar">M</div><div><strong id="profileName">Игрок Mystic</strong><small id="profileUsername">Telegram account</small></div><span class="account-mark">✦</span></section>
+<section class="wallet-card"><div class="wallet-top"><span>ТВОЙ БАЛАНС</span><span class="wallet-currency">MST</span></div><div class="wallet-value" id="balance">0 <small>MST</small></div><div class="wallet-bottom"><span>Внутренняя валюта Mystic</span><span id="itemCount">0 подарков</span></div></section>
+<section class="profile-stats"><div><strong id="spinCount">0</strong><small>Прокруток</small></div><div><strong id="profileItemCount">0</strong><small>Подарков</small></div></section>
+<p class="payment-note">Пока рулетка выдаёт виртуальные записи о подарках внутри приложения. Автоматическая передача Telegram Gifts на аккаунт не подключена.</p>
+</section>
+</main>
+<nav class="bottom-nav">
+<button class="nav-item active" data-screen="homeScreen"><span>✦</span>Магазин</button>
+<button class="nav-item" data-screen="tasksScreen"><span>☼</span>Задания</button>
+<button class="nav-item" data-screen="inventoryScreen"><span>◇</span>Инвентарь</button>
+<button class="nav-item" data-screen="profileScreen"><span>○</span>Профиль</button>
+</nav></div>
+<div class="modal hidden" id="resultModal"><div class="modal-card"><div class="modal-glow"></div><div class="eyebrow">ТВОЙ ВЫИГРЫШ</div><div class="result-art" id="resultArt"></div><h2 id="resultName">Подарок!</h2><div class="rarity" id="resultRarity"></div><button class="primary-btn" id="closeResult">ЗАБРАТЬ В ИНВЕНТАРЬ</button></div></div>
+<div class="toast" id="toast"></div>
+<script src="/static/app.js?v=gift-shop-3"></script></body></html>
