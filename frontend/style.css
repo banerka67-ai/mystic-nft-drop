@@ -11,3 +11,25 @@ body:after{content:"";position:fixed;z-index:-1;pointer-events:none;width:85vw;h
 @keyframes starDrift{from{transform:translate3d(0,0,0)}to{transform:translate3d(-55px,-90px,0)}}
 @keyframes nebulaTurn{to{rotate:360deg}}
 @media(prefers-reduced-motion:reduce){body:before,body:after{animation:none}}
+
+
+/* Expanded deep-space backdrop */
+html,body{background-color:#070812}
+body{
+ background-image:
+  radial-gradient(ellipse at 8% 16%,#7c4dca26 0,transparent 31%),
+  radial-gradient(ellipse at 93% 29%,#22a9b626 0,transparent 29%),
+  radial-gradient(ellipse at 48% 93%,#5937a326 0,transparent 36%),
+  radial-gradient(ellipse at 50% 48%,#111b3022 0,transparent 62%),
+  repeating-linear-gradient(0deg,#9e9ac008 0 1px,transparent 1px 46px),
+  repeating-linear-gradient(90deg,#9e9ac008 0 1px,transparent 1px 46px),
+  linear-gradient(180deg,#080914 0%,#0a0d19 48%,#080a14 100%);
+ background-attachment:fixed;
+}
+.app-shell:before,.app-shell:after{content:"";position:fixed;pointer-events:none;z-index:-1;border-radius:50%;filter:blur(2px)}
+.app-shell:before{width:230px;height:230px;left:-145px;top:24%;border:1px solid #9c82e51c;box-shadow:0 0 0 24px #9c82e508,0 0 0 50px #9c82e506,0 0 75px #8764d522;animation:floatHalo 17s ease-in-out infinite}
+.app-shell:after{width:170px;height:170px;right:-115px;top:66%;border:1px solid #70dce51c;box-shadow:0 0 0 22px #70dce508,0 0 0 44px #70dce506,0 0 70px #70dce522;animation:floatHalo 21s ease-in-out infinite reverse}
+@keyframes floatHalo{0%,100%{transform:translate3d(0,0,0) scale(.94)}50%{transform:translate3d(18px,-24px,0) scale(1.07)}}
+.hero,.daily-card,.feature-banner,.gift-card,.roulette-card,.mines-panel,.account-card,.wallet-card{backdrop-filter:blur(8px)}
+.gift-card,.feature-banner,.daily-card,.roulette-card,.mines-panel{box-shadow:0 12px 34px #0005,0 1px 0 #ffffff08 inset}
+@media(prefers-reduced-motion:reduce){.app-shell:before,.app-shell:after{animation:none}}
