@@ -163,12 +163,26 @@ app.get("/api/gift-art/:giftId", async (req,res) => {
 
 function buildRoulettes(gifts) {
   const sorted = [...gifts].sort((a,b) => Number(a.star_count || 0) - Number(b.star_count || 0));
+  const count = sorted.length;
+  const take = (fraction) => sorted.slice(0, Math.max(1, Math.ceil(count * fraction)));
+  // Separate prize pools: two budget cases and a high-tier case focused on limited gifts.
+  const limited = sorted.filter(g => Number.isFinite(g.limited_count) && g.limited_count > 0);
+  const premiumPool = take(0.72);
+  const nftPool = limited.length
+    ? limited.slice().sort((a,b) => Number(b.star_count || 0) - Number(a.star_count || 0))
+    : sorted.slice(Math.max(0, Math.floor(count * 0.65)));
+  const pools = {
+    classic: take(0.4),
+    premium: premiumPool,
+    legendary: nftPool.length ? nftPool : sorted.slice(-1)
+  };
   const result = {};
   for (const mode of Object.values(ROULETTE_MODES)) {
-    const prizes = sorted.map((gift, index) => {
+    const pool = pools[mode.id] || sorted;
+    const prizes = pool.map((gift, index) => {
       const emoji = gift.sticker?.emoji || "🎁";
       const stars = Number(gift.star_count || 0);
-      const percentile = sorted.length <= 1 ? 0 : index / (sorted.length - 1);
+      const percentile = pool.length <= 1 ? 0 : index / (pool.length - 1);
       const rarity = percentile >= .9 ? "Легендарный" : percentile >= .7 ? "Эпический" : percentile >= .4 ? "Редкий" : "Обычный";
       const weight = Math.max(1, Math.round(10000 / Math.pow(index + 1, mode.exponent)));
       return {
