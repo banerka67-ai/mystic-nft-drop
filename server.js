@@ -231,7 +231,7 @@ app.get("/api/me", auth, (req,res) => {
 app.get("/api/daily", auth, requireSubscription, (req,res) => {
   const today = new Date().toISOString().slice(0,10);
   const claim = db.prepare("SELECT id FROM task_claims WHERE telegram_id=? AND task_id='daily' AND claim_day=?").get(req.user.id,today);
-  res.json({ claimed: !!claim, reward: 25 });
+  res.json({ claimed: !!claim, reward: 5 });
 });
 app.post("/api/daily/claim", auth, requireSubscription, (req,res) => {
   try {
@@ -239,8 +239,8 @@ app.post("/api/daily/claim", auth, requireSubscription, (req,res) => {
     const today = new Date().toISOString().slice(0,10);
     const run = db.transaction(() => {
       db.prepare("INSERT INTO task_claims(telegram_id,task_id,claim_day) VALUES(?,'daily',?)").run(req.user.id,today);
-      db.prepare("UPDATE users SET balance=balance+25, updated_at=CURRENT_TIMESTAMP WHERE telegram_id=?").run(req.user.id);
-      return { reward:25, balance:getUser.get(req.user.id).balance };
+      db.prepare("UPDATE users SET balance=balance+5, updated_at=CURRENT_TIMESTAMP WHERE telegram_id=?").run(req.user.id);
+      return { reward:5, balance:getUser.get(req.user.id).balance };
     });
     res.json(run.immediate());
   } catch(err) {
@@ -255,8 +255,8 @@ app.get("/api/tasks", auth, (req,res) => {
   const claimed = db.prepare("SELECT task_id, claim_day FROM task_claims WHERE telegram_id=?").all(req.user.id);
   const has = (id, day) => claimed.some(x => x.task_id === id && x.claim_day === day);
   res.json({ tasks: [
-    { id:"subscribe", title:"Подписаться на канал", description:"Подпишись на @MysticDropNFT и забери награду один раз.", reward:100, claimed:has("subscribe","once"), repeat:"once" },
-    { id:"daily", title:"Ежедневный вход", description:"Заходи в Mystic Drop каждый день.", reward:25, claimed:has("daily",today), repeat:"daily" }
+    { id:"subscribe", title:"Подписаться на канал", description:"Подпишись на @MysticDropNFT и забери награду один раз.", reward:10, claimed:has("subscribe","once"), repeat:"once" },
+    { id:"daily", title:"Ежедневный вход", description:"Заходи в Mystic Drop каждый день.", reward:5, claimed:has("daily",today), repeat:"daily" }
   ]});
 });
 app.post("/api/tasks/claim", auth, async (req,res) => {
@@ -268,7 +268,7 @@ app.post("/api/tasks/claim", auth, async (req,res) => {
       if (!membership.subscribed) return res.status(403).json({error:"Сначала подпишись на @MysticDropNFT, затем нажми «Проверить»."});
     }
     const claimDay = taskId === "subscribe" ? "once" : new Date().toISOString().slice(0,10);
-    const reward = taskId === "subscribe" ? 100 : 25;
+    const reward = taskId === "subscribe" ? 10 : 5;
     const run = db.transaction(() => {
       createUser.run(req.user.id, req.user.first_name, req.user.username);
       db.prepare("INSERT INTO task_claims(telegram_id,task_id,claim_day) VALUES(?,?,?)").run(req.user.id,taskId,claimDay);
