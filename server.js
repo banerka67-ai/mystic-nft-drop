@@ -43,7 +43,7 @@ setInterval(() => {
 const ROOT = __dirname;
 const PORT = Number(process.env.PORT || 3000);
 const BOT_TOKEN = process.env.BOT_TOKEN || "";
-const CHANNEL = process.env.REQUIRED_CHANNEL || "@MysticDropNFT";
+const CHANNEL = process.env.REQUIRED_CHANNEL || "@MysticNftDrop";
 const DEV_MODE = process.env.DEV_MODE === "true";
 const ADMIN_IDS = new Set((process.env.ADMIN_IDS || "").split(",").map(x => x.trim()).filter(Boolean));
 const DB_PATH = process.env.DB_PATH || (fs.existsSync("/var/data") ? "/var/data/mystic.sqlite3" : path.join(ROOT, "data", "mystic.sqlite3"));
@@ -242,7 +242,7 @@ async function telegramMember(userId, allowLocalDev = false) {
   const data = await response.json();
   if (!response.ok || !data.ok) {
     console.error("Telegram getChatMember failed:", data.description || response.status);
-    throw Object.assign(new Error("Telegram не дал проверить подписку. Добавь бота администратором канала @MysticDropNFT и попробуй снова."), { status: 502 });
+    throw Object.assign(new Error("Telegram не дал проверить подписку. Добавь бота администратором канала @MysticNftDrop и попробуй снова."), { status: 502 });
   }
   const status = data.result?.status || "left";
   return { subscribed: ["creator", "administrator", "member"].includes(status) || (status === "restricted" && data.result?.is_member === true), status };
@@ -307,7 +307,7 @@ app.get("/api/tasks", auth, (req,res) => {
   const claimed = db.prepare("SELECT task_id, claim_day FROM task_claims WHERE telegram_id=?").all(req.user.id);
   const has = (id, day) => claimed.some(x => x.task_id === id && x.claim_day === day);
   res.json({ tasks: [
-    { id:"subscribe", title:"Подписаться на канал", description:"Подпишись на @MysticDropNFT и забери награду один раз.", reward:10, claimed:has("subscribe","once"), repeat:"once" },
+    { id:"subscribe", title:"Подписаться на канал", description:"Подпишись на @MysticNftDrop и забери награду один раз.", reward:10, claimed:has("subscribe","once"), repeat:"once" },
     { id:"daily", title:"Ежедневный вход", description:"Заходи в Mystic Drop каждый день.", reward:5, claimed:has("daily",today), repeat:"daily" }
   ]});
 });
@@ -317,7 +317,7 @@ app.post("/api/tasks/claim", auth, async (req,res) => {
     if (!["subscribe","daily"].includes(taskId)) return res.status(400).json({error:"Неизвестное задание"});
     if (taskId === "subscribe") {
       const membership = await telegramMember(req.user.id, isLocalDev(req));
-      if (!membership.subscribed) return res.status(403).json({error:"Сначала подпишись на @MysticDropNFT, затем нажми «Проверить»."});
+      if (!membership.subscribed) return res.status(403).json({error:"Сначала подпишись на @MysticNftDrop, затем нажми «Проверить»."});
     }
     const claimDay = taskId === "subscribe" ? "once" : new Date().toISOString().slice(0,10);
     const reward = taskId === "subscribe" ? 10 : 5;
