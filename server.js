@@ -174,21 +174,31 @@ const ROULETTE_MODES = {
 };
 let ROULETTES = {};
 let giftsCache = { at: 0, gifts: [] };
+let giftsInFlight = null;
 const giftArtCache = new Map();
 
 async function getAvailableTelegramGifts() {
   if (!BOT_TOKEN) throw Object.assign(new Error("На сервере не настроен BOT_TOKEN"), { status: 503 });
   if (giftsCache.gifts.length && Date.now() - giftsCache.at < 60_000) return giftsCache.gifts;
-  const response = await fetch("https://api.telegram.org/bot" + BOT_TOKEN + "/getAvailableGifts");
-  const data = await response.json().catch(() => ({}));
-  if (!response.ok || !data.ok) {
-    console.error("Telegram getAvailableGifts failed:", data.description || response.status);
-    throw Object.assign(new Error("Telegram не вернул список подарков. Проверь BOT_TOKEN и доступность Bot API."), { status: 502 });
+  // Share one in-flight request between /api/shop, /api/roulette and gift artwork.
+  if (giftsInFlight) return giftsInFlight;
+  giftsInFlight = (async () => {
+    const response = await fetch("https://api.telegram.org/bot" + BOT_TOKEN + "/getAvailableGifts");
+    const data = await response.json().catch(() => ({}));
+    if (!response.ok || !data.ok) {
+      console.error("Telegram getAvailableGifts failed:", data.description || response.status);
+      throw Object.assign(new Error("Telegram не вернул список подарков. Проверь BOT_TOKEN и доступность Bot API."), { status: 502 });
+    }
+    const gifts = (data.result?.gifts || []).filter(g => g && g.id && g.sticker);
+    if (!gifts.length) throw Object.assign(new Error("Сейчас Telegram не вернул доступные подарки для бота."), { status: 503 });
+    giftsCache = { at: Date.now(), gifts };
+    return gifts;
+  })();
+  try {
+    return await giftsInFlight;
+  } finally {
+    giftsInFlight = null;
   }
-  const gifts = (data.result?.gifts || []).filter(g => g && g.id && g.sticker);
-  if (!gifts.length) throw Object.assign(new Error("Сейчас Telegram не вернул доступные подарки для бота."), { status: 503 });
-  giftsCache = { at: Date.now(), gifts };
-  return gifts;
 }
 
 app.get("/api/gift-art/:giftId", async (req,res) => {
