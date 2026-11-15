@@ -36,3 +36,9 @@
 .history-section{margin-top:23px}.history-list{display:grid;gap:7px}.history-row{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:11px 12px;border:1px solid #302a38;border-radius:11px;background:#17151e}.history-row strong{display:block;font-size:10px}.history-row small{display:block;margin-top:4px;color:#827b89;font-size:8px}.history-row>b{font-size:9px;color:#c7a8e1;white-space:nowrap}
 .toast{position:fixed;z-index:20;left:50%;bottom:85px;transform:translate(-50%,15px);opacity:0;pointer-events:none;padding:11px 16px;border:1px solid #82669a;border-radius:12px;background:#211a2b;color:#f2e7ff;font-size:10px;box-shadow:0 8px 28px #0009;transition:.25s}.toast.show{opacity:1;transform:translate(-50%,0)}
 @media(max-width:370px){.mines-grid{gap:5px}.mine-cell{border-radius:7px}.daily-card{gap:8px;padding:10px}.daily-claim{padding:9px 8px}}
+
+
+.roulette-modes{display:grid;grid-template-columns:repeat(3,1fr);gap:7px;margin:0 0 10px}
+.roulette-mode{padding:10px 4px;border:1px solid #34303c;border-radius:10px;background:#17151e;color:#a69cab;font-size:8px;font-weight:800;letter-spacing:.6px;cursor:pointer}
+.roulette-mode small{display:block;margin-top:5px;color:#81798a;font-size:8px;font-weight:500;letter-spacing:0}
+.roulette-mode.active{border-color:#a98ac5;background:linear-gradient(145deg,#352640,#211b2b);color:#f1e5ff;box-shadow:0 0 17px #b58ce822}
