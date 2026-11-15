@@ -42,3 +42,5 @@
 .roulette-mode{padding:10px 4px;border:1px solid #34303c;border-radius:10px;background:#17151e;color:#a69cab;font-size:8px;font-weight:800;letter-spacing:.6px;cursor:pointer}
 .roulette-mode small{display:block;margin-top:5px;color:#81798a;font-size:8px;font-weight:500;letter-spacing:0}
 .roulette-mode.active{border-color:#a98ac5;background:linear-gradient(145deg,#352640,#211b2b);color:#f1e5ff;box-shadow:0 0 17px #b58ce822}
+
+.odds-list{display:flex;flex-wrap:wrap;gap:6px;margin:11px 1px 0}.odds-list span{padding:6px 8px;border:1px solid #302a38;border-radius:7px;background:#17151e;color:#928a9b;font-size:8px}.odds-list b{color:#d4b7ed;margin-left:4px}
