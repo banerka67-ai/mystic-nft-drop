@@ -360,9 +360,9 @@ app.post("/api/spin", auth, requireSubscription, async (req,res) => {
       createUser.run(req.user.id, req.user.first_name, req.user.username);
       const existing = db.prepare("SELECT roulette_id, prize_id FROM spins WHERE telegram_id=? AND request_id=?").get(req.user.id, request_id);
       if (existing) {
-        const originalRoulette = ROULETTES[existing.roulette_id];
-        const prize = originalRoulette?.prizes.find(p => p.id === existing.prize_id);
-        if (!prize) throw new Error("Не удалось восстановить результат предыдущего запроса");
+        const owned = db.prepare("SELECT prize_id, prize_name, emoji, rarity FROM inventory WHERE telegram_id=? AND prize_id=? AND source='roulette' ORDER BY id DESC LIMIT 1").get(req.user.id, existing.prize_id);
+        if (!owned) throw new Error("Не удалось восстановить результат предыдущего запроса");
+        const prize = { id:owned.prize_id, gift_id:owned.prize_id, name:owned.prize_name, emoji:owned.emoji, rarity:owned.rarity };
         return { prize, balance: getUser.get(req.user.id).balance, replayed: true };
       }
       const user = getUser.get(req.user.id);
