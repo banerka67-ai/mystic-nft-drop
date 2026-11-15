@@ -108,6 +108,12 @@ CREATE INDEX IF NOT EXISTS idx_mines_user ON mines_games(telegram_id, status);
 `);
 
 const MST_PER_STAR = 2; // Informational reference rate only; MST is not Telegram Stars.
+const parsedMinesRtp = Number(process.env.MINES_RTP ?? 0.96);
+const MINES_RTP = Number.isFinite(parsedMinesRtp) ? Math.min(0.99, Math.max(0.5, parsedMinesRtp)) : 0.96;
+const parsedMinesMaxBet = Number(process.env.MINES_MAX_BET ?? 10000);
+const MINES_MAX_BET = Number.isSafeInteger(parsedMinesMaxBet) ? Math.min(1000000, Math.max(1, parsedMinesMaxBet)) : 10000;
+const parsedMinesMaxPayout = Number(process.env.MINES_MAX_PAYOUT ?? 1000000);
+const MINES_MAX_PAYOUT = Number.isSafeInteger(parsedMinesMaxPayout) ? Math.min(1000000000, Math.max(1, parsedMinesMaxPayout)) : 1000000;
 const ROULETTE_MODES = {
   classic: { id: "classic", title: "Mini Case", cost: 100, exponent: 2.1 },
   premium: { id: "premium", title: "Mystic Case", cost: 250, exponent: 1.25 },
@@ -430,14 +436,17 @@ app.get("/api/mines/active", auth, requireSubscription, (req,res) => {
     revealed:JSON.parse(row.revealed_json),
     multiplier:Number(row.multiplier),
     bombs_count:4,
-    grid_size:25
+    grid_size:25,
+    min_bet:1,
+    max_bet:MINES_MAX_BET,
+    max_payout:MINES_MAX_PAYOUT
   });
 });
 
 app.post("/api/mines/start", auth, requireSubscription, (req,res) => {
   try {
     const bet = Number(req.body?.bet);
-    if (!Number.isSafeInteger(bet) || bet < 1 || bet > 10000) return res.status(400).json({ error:"Ставка должна быть от 1 до 10000 MST" });
+    if (!Number.isSafeInteger(bet) || bet < 1 || bet > MINES_MAX_BET) return res.status(400).json({ error:"Ставка должна быть от 1 до " + MINES_MAX_BET + " MST" });
     const id = crypto.randomUUID();
     const bombs = new Set();
     while (bombs.size < 4) bombs.add(crypto.randomInt(0,25));
@@ -452,7 +461,7 @@ app.post("/api/mines/start", auth, requireSubscription, (req,res) => {
       return getUser.get(req.user.id).balance;
     });
     const balance = run.immediate();
-    res.json({ game_id:id, bet, bombs_count:4, balance, grid_size:25 });
+    res.json({ game_id:id, bet, bombs_count:4, balance, grid_size:25, min_bet:1, max_bet:MINES_MAX_BET, max_payout:MINES_MAX_PAYOUT });
   } catch(err) { apiError(res,err); }
 });
 
@@ -484,7 +493,7 @@ app.post("/api/mines/reveal", auth, requireSubscription, (req,res) => {
       const next = [...revealed,cell];
       let safeProbability = 1;
       for (let i=0;i<next.length-1;i++) safeProbability *= (20-i)/(24-i);
-      const multiplier = next.length === 1 ? 1 : Number((0.96 / safeProbability).toFixed(4));
+      const multiplier = next.length === 1 ? 1 : Number((MINES_RTP / safeProbability).toFixed(4));
       db.prepare("UPDATE mines_games SET revealed_json=?, multiplier=? WHERE id=? AND status='active'").run(JSON.stringify(next),multiplier,game_id);
       return { hit:false, cell, revealed:next, multiplier, safe_count:next.length };
     }).immediate();
@@ -502,7 +511,7 @@ app.post("/api/mines/cashout", auth, requireSubscription, (req,res) => {
       const revealed = JSON.parse(row.revealed_json);
       if (!revealed.length) throw Object.assign(new Error("Сначала открой хотя бы одну клетку"), { status:400 });
       const multiplier = Number(row.multiplier);
-      const payout = Math.floor(row.bet * multiplier);
+      const payout = Math.min(MINES_MAX_PAYOUT, Math.floor(row.bet * multiplier));
       db.prepare("UPDATE mines_games SET status='cashed_out', payout=?, finished_at=CURRENT_TIMESTAMP WHERE id=?").run(payout,game_id);
       db.prepare("UPDATE users SET balance=balance+? WHERE telegram_id=?").run(payout,req.user.id);
       return { payout, multiplier, balance:getUser.get(req.user.id).balance };
