@@ -114,6 +114,7 @@ const ROULETTE_MODES = {
 };
 let ROULETTES = {};
 let giftsCache = { at: 0, gifts: [] };
+const giftArtCache = new Map();
 
 async function getAvailableTelegramGifts() {
   if (!BOT_TOKEN) throw Object.assign(new Error("На сервере не настроен BOT_TOKEN"), { status: 503 });
@@ -129,6 +130,36 @@ async function getAvailableTelegramGifts() {
   giftsCache = { at: Date.now(), gifts };
   return gifts;
 }
+
+app.get("/api/gift-art/:giftId", async (req,res) => {
+  try {
+    const giftId = String(req.params.giftId || "").slice(0, 128);
+    const cached = giftArtCache.get(giftId);
+    if (cached && Date.now() - cached.at < 3_600_000) {
+      res.set("Cache-Control", "public, max-age=3600").type(cached.type).send(cached.bytes);
+      return;
+    }
+    const gifts = await getAvailableTelegramGifts();
+    const gift = gifts.find(item => String(item.id) === giftId);
+    if (!gift) return res.sendStatus(404);
+    const fileId = gift.sticker?.thumbnail?.file_id || gift.sticker?.file_id;
+    if (!fileId) return res.sendStatus(404);
+    const file = await telegramApi("getFile", { file_id: fileId });
+    const filePath = String(file.file_path || "");
+    const ext = filePath.split(".").pop().toLowerCase();
+    const type = ({ webp:"image/webp", png:"image/png", jpg:"image/jpeg", jpeg:"image/jpeg" })[ext];
+    if (!type) return res.sendStatus(415);
+    const imageResponse = await fetch("https://api.telegram.org/file/bot" + BOT_TOKEN + "/" + filePath);
+    if (!imageResponse.ok) return res.sendStatus(404);
+    const bytes = Buffer.from(await imageResponse.arrayBuffer());
+    if (bytes.length > 2_000_000) return res.sendStatus(413);
+    giftArtCache.set(giftId, { at: Date.now(), type, bytes });
+    res.set("Cache-Control", "public, max-age=3600").type(type).send(bytes);
+  } catch (err) {
+    console.warn("Telegram gift artwork unavailable:", err.message);
+    res.sendStatus(404);
+  }
+});
 
 function buildRoulettes(gifts) {
   const sorted = [...gifts].sort((a,b) => Number(a.star_count || 0) - Number(b.star_count || 0));
