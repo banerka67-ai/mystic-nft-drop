@@ -31,7 +31,7 @@ function rateLimit({ windowMs = 60_000, max = 300, message = "Слишком м�
 app.use("/api", rateLimit());
 app.use("/api", (req, res, next) => {
   if (["POST", "PUT", "PATCH", "DELETE"].includes(req.method)) {
-    return rateLimit({ max: 25, message: "Слишком много изменений подряд. Подожди минуту." })(req, res, next);
+    return rateLimit({ windowMs: 25_000, max: 25, message: "Слишком много действий подряд. Подожди 25 секунд." })(req, res, next);
   }
   next();
 });
