@@ -162,3 +162,29 @@ body:after{opacity:.28;filter:blur(75px)}
 
 .tile-art img{display:block;width:54px;height:54px;max-width:54px;max-height:54px;object-fit:contain;filter:drop-shadow(0 10px 12px #0008)}
 .result-art>img{display:block;width:138px;height:138px;max-width:138px;max-height:138px;margin:0 auto;object-fit:contain;filter:drop-shadow(0 12px 16px #0008)}
+
+
+/* Complete 5x5 MST Mines screen */
+.mines-stats{display:grid;grid-template-columns:1fr 1fr;gap:9px;margin:0 0 13px}
+.mines-stats>div{min-width:0;padding:11px 12px;border:1px solid #3b514d;border-radius:5px;background:#101b20}
+.mines-stats small{display:block;color:#9aaead;font-size:7px;letter-spacing:1px}
+.mines-stats strong{display:block;margin-top:6px;color:#d4f5e9;font:700 14px Unbounded,Manrope,sans-serif;overflow-wrap:anywhere}
+.mine-status{min-height:32px;margin:12px 2px 4px;color:#c9e9df;font-size:10px;line-height:1.6;text-align:center}
+.mines-actions{margin-top:12px}
+.mines-actions button{min-height:42px}
+.mines-actions .cashout-btn{background:linear-gradient(100deg,#397e6d,#5aaf94);color:#f0fff8}
+.mine-cell{font-size:19px;user-select:none;-webkit-tap-highlight-color:transparent}
+.mine-cell:not(:disabled):hover{border-color:#b1e9dc;filter:brightness(1.15)}
+.mine-cell:disabled{opacity:1}
+.mine-cell.mine-bomb{background:radial-gradient(circle,#a24d5b,#3d202b);color:#fff0f0;border-color:#e08a96}
+.mine-cell.mine-safe{background:radial-gradient(circle,#78b9a6,#234b45);color:#edfff8;border-color:#a5e6d2}
+.nav-item{flex:1;min-width:0;padding-left:2px;padding-right:2px}
+.nav-item span{display:block}
+@media(max-width:370px){
+ .mines-panel{padding:12px 10px}
+ .mines-grid{gap:5px}
+ .mine-cell{font-size:16px}
+ .mines-actions{gap:6px}
+ .mines-actions .primary-btn{font-size:7px;padding:12px 4px}
+ .nav-item{font-size:7px}
+}
