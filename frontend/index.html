@@ -59,6 +59,18 @@
         <div class="inventory-list" id="inventory"><div class="empty-state">Твои находки появятся здесь</div></div>
       </section>
 
+      <section class="screen" id="minesScreen">
+        <div class="page-heading"><div class="eyebrow">MYSTIC CHALLENGE</div><h1>MINES <em>5×5</em></h1><p>На поле 4 мины. Открывай кристаллы и забирай виртуальные MST, пока не попалась мина.</p></div>
+        <div class="mines-panel">
+          <div class="mines-topline"><span>МИНЫ <b>04</b></span><span id="minesMultiplier">×1.00</span></div>
+          <div class="mines-grid" id="minesGrid"><button class="mine-cell" data-cell="0" aria-label="Клетка 1">✦</button><button class="mine-cell" data-cell="1" aria-label="Клетка 2">✦</button><button class="mine-cell" data-cell="2" aria-label="Клетка 3">✦</button><button class="mine-cell" data-cell="3" aria-label="Клетка 4">✦</button><button class="mine-cell" data-cell="4" aria-label="Клетка 5">✦</button><button class="mine-cell" data-cell="5" aria-label="Клетка 6">✦</button><button class="mine-cell" data-cell="6" aria-label="Клетка 7">✦</button><button class="mine-cell" data-cell="7" aria-label="Клетка 8">✦</button><button class="mine-cell" data-cell="8" aria-label="Клетка 9">✦</button><button class="mine-cell" data-cell="9" aria-label="Клетка 10">✦</button><button class="mine-cell" data-cell="10" aria-label="Клетка 11">✦</button><button class="mine-cell" data-cell="11" aria-label="Клетка 12">✦</button><button class="mine-cell" data-cell="12" aria-label="Клетка 13">✦</button><button class="mine-cell" data-cell="13" aria-label="Клетка 14">✦</button><button class="mine-cell" data-cell="14" aria-label="Клетка 15">✦</button><button class="mine-cell" data-cell="15" aria-label="Клетка 16">✦</button><button class="mine-cell" data-cell="16" aria-label="Клетка 17">✦</button><button class="mine-cell" data-cell="17" aria-label="Клетка 18">✦</button><button class="mine-cell" data-cell="18" aria-label="Клетка 19">✦</button><button class="mine-cell" data-cell="19" aria-label="Клетка 20">✦</button><button class="mine-cell" data-cell="20" aria-label="Клетка 21">✦</button><button class="mine-cell" data-cell="21" aria-label="Клетка 22">✦</button><button class="mine-cell" data-cell="22" aria-label="Клетка 23">✦</button><button class="mine-cell" data-cell="23" aria-label="Клетка 24">✦</button><button class="mine-cell" data-cell="24" aria-label="Клетка 25">✦</button></div>
+          <label class="bet-label" for="minesBet">Ставка в виртуальных MST</label>
+          <input class="bet-input" id="minesBet" type="number" min="1" max="10000" value="25">
+          <div class="mines-actions"><button class="primary-btn" id="minesStart">НАЧАТЬ ИГРУ</button><button class="primary-btn cashout-btn" id="minesCashout" disabled>ЗАБРАТЬ ВЫИГРЫШ</button></div>
+          <p class="hint" id="minesHint">Это игровая механика на виртуальных баллах. Денежных ставок и выплат нет.</p>
+        </div>
+      </section>
+
       <section class="screen" id="inventoryScreen">
         <div class="page-heading"><div class="eyebrow">YOUR ITEMS</div><h1>Инвентарь</h1><p>Все подарки, которые ты получил.</p></div>
         <div class="inventory-list inventory-full" id="inventoryFull"><div class="empty-state">Пока здесь пусто</div></div>
@@ -94,7 +106,7 @@
 
     <nav class="bottom-nav">
       <button class="nav-item active" data-screen="homeScreen"><span>⌂</span>Главная</button>
-      <button class="nav-item" data-screen="inventoryScreen"><span>◇</span>Инвентарь</button>
+      <button class="nav-item" data-screen="minesScreen"><span>✧</span>MINES</button>\n      <button class="nav-item" data-screen="inventoryScreen"><span>◇</span>Инвентарь</button>
       <button class="nav-item" data-screen="profileScreen"><span>○</span>Профиль</button>
     </nav>
   </div>
