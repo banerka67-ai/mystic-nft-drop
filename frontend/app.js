@@ -1,114 +1,23 @@
-const tg = window.Telegram?.WebApp;
-if (tg) { tg.ready(); tg.expand(); }
-const authHeader = tg?.initData ? "tma " + tg.initData : "";
-const $ = id => document.getElementById(id);
-let tasks = [];
-let currentItems = [];
-
-async function api(path, options = {}) {
-  const headers = { "Content-Type":"application/json", ...(authHeader ? {Authorization:authHeader} : {}), ...(options.headers || {}) };
-  const response = await fetch(path, {...options, headers});
-  const data = await response.json().catch(()=>({}));
-  if (!response.ok) {
-    const error = new Error(data.error || "Ошибка запроса");
-    error.status = response.status;
-    throw error;
-  }
-  return data;
-}
-function escapeHtml(value) {
-  return String(value ?? "").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
-}
-function setBalance(value) {
-  const html = Number(value).toLocaleString("ru-RU")+" <small>MST</small>";
-  $("balance").innerHTML = html;
-  $("homeBalance").innerHTML = html;
-}
-function showScreen(id) {
-  document.querySelectorAll(".screen").forEach(s=>s.classList.toggle("active",s.id===id));
-  document.querySelectorAll(".nav-item").forEach(b=>b.classList.toggle("active",b.dataset.screen===id));
-  window.scrollTo({top:0,behavior:"smooth"});
-}
-function toast(message) {
-  const el=$("toast"); el.textContent=message; el.classList.add("show");
-  setTimeout(()=>el.classList.remove("show"),2400);
-}
-function renderLoadError(error) {
-  const isAuth = error.status === 401 || /Открой приложение через Telegram|авторизац/i.test(error.message);
-  $("taskList").innerHTML = isAuth
-    ? '<div class="setup-message"><div class="setup-icon">↗</div><strong>Открой Mystic Drop через Telegram</strong><p>Авторизация доступна только при запуске Mini App из Telegram. Открой чат своего бота и нажми кнопку приложения.</p><small>Если ты уже открыл его через Telegram — закрой Mini App и запусти заново.</small></div>'
-    : '<div class="setup-message"><div class="setup-icon">!</div><strong>Не удалось загрузить приложение</strong><p>'+escapeHtml(error.message)+'</p><button class="task-claim" id="retryLoad">Повторить</button></div>';
-  const retry=$("retryLoad");
-  if(retry) retry.addEventListener("click",load);
-  $("taskCount").textContent="Не удалось загрузить";
-}
-function renderTasks() {
-  const available=tasks.filter(t=>!t.claimed).length;
-  $("taskCount").textContent=available+" из "+tasks.length+" доступны";
-  $("taskDone").textContent=tasks.filter(t=>t.claimed).length;
-  $("taskList").innerHTML=tasks.map(task=>`
-    <article class="task-card ${task.claimed?"task-complete":""}">
-      <div class="task-card-icon">${task.id==="subscribe"?"◉":"☀"}</div>
-      <div class="task-card-copy">
-        <strong>${escapeHtml(task.title)}</strong>
-        <p>${escapeHtml(task.description)}</p>
-        ${task.id==="subscribe"?'<a class="task-channel-link" href="https://t.me/MysticDropNFT">Открыть канал ↗</a>':""}
-        <span class="task-reward">＋${task.reward} MST</span>
-      </div>
-      <button class="task-claim" data-task="${task.id}" ${task.claimed?"disabled":""}>${task.claimed?"Получено":(task.id==="subscribe"?"Проверить":"Забрать")}</button>
-    </article>`).join("");
-  document.querySelectorAll(".task-claim:not(:disabled)").forEach(button=>button.addEventListener("click",()=>claimTask(button.dataset.task,button)));
-}
-async function claimTask(id,button) {
-  const originalText=id==="subscribe"?"Проверить":"Забрать";
-  button.disabled=true; button.textContent="…";
-  try {
-    const result=await api("/api/tasks/claim",{method:"POST",body:JSON.stringify({task_id:id})});
-    setBalance(result.balance);
-    await loadTasks();
-    toast("Получено +"+result.reward+" MST");
-  } catch(error) {
-    button.disabled=false; button.textContent=originalText;
-    toast(error.message);
-  }
-}
-async function loadTasks() {
-  const data=await api("/api/tasks");
-  tasks=data.tasks||[];
-  renderTasks();
-}
-function giftImage(id) {
-  const ids={teddy_bear:"5170233102089322756",red_rose:"5168103777563050263",gift_box:"5170250947678437525",rocket:"5170564780938756245",diamond_ring:"5170690322832818290"};
-  const gift=ids[id];
-  return gift?"https://denzyve.github.io/cdn-telegram-gifts/assets/png/gift_"+gift+".png":"";
-}
-function renderInventory(items) {
-  currentItems=items||[];
-  $("inventoryFull").innerHTML=currentItems.length?currentItems.map(item=>{
-    const src=giftImage(item.prize_id);
-    return `<div class="inventory-item"><div class="item-art tg-gift-art">${src?`<img src="${src}" alt="">`:"✦"}</div><div><strong>${escapeHtml(item.prize_name)}</strong><small>${escapeHtml(item.rarity)}</small></div></div>`;
-  }).join(""):'<div class="empty-state">Пока здесь пусто</div>';
-  $("itemCount").textContent=currentItems.length+" предметов";
-  $("profileItemCount").textContent=currentItems.length;
-}
-async function load() {
-  $("taskList").innerHTML='<div class="empty-state">Загружаем задания…</div>';
-  $("taskCount").textContent="Загрузка…";
-  try {
-    const [me,inventory]=await Promise.all([api("/api/me"),api("/api/inventory")]);
-    setBalance(me.balance);
-    const initial=(me.name||"M").slice(0,1).toUpperCase();
-    $("avatar").textContent=initial;
-    $("profileAvatar").textContent=initial;
-    $("profileName").textContent=me.name||"Игрок Mystic";
-    $("profileUsername").textContent=me.username?"@"+me.username:"Telegram account";
-    renderInventory(inventory.items);
-    await loadTasks();
-  } catch(error) {
-    renderLoadError(error);
-  }
-}
-document.querySelectorAll(".nav-item").forEach(button=>button.addEventListener("click",()=>showScreen(button.dataset.screen)));
-$("profileShortcut").addEventListener("click",()=>showScreen("profileScreen"));
-$("homeBrand").addEventListener("click",event=>{event.preventDefault();showScreen("homeScreen");});
-load();
+const tg=window.Telegram?.WebApp;if(tg){tg.ready();tg.expand();}
+const authHeader=tg?.initData?"tma "+tg.initData:"";const $=id=>document.getElementById(id);
+let tasks=[],items=[],roulettes=[],activeMode="classic",spinning=false;
+const giftIds={teddy_bear:"5170233102089322756",red_rose:"5168103777563050263",gift_box:"5170250947678437525",rocket:"5170564780938756245",diamond_ring:"5170690322832818290"};
+async function api(path,options={}){const headers={"Content-Type":"application/json",...(authHeader?{Authorization:authHeader}:{}),...(options.headers||{})};const r=await fetch(path,{...options,headers});const d=await r.json().catch(()=>({}));if(!r.ok){const e=new Error(d.error||"Ошибка запроса");e.status=r.status;throw e;}return d;}
+function esc(v){return String(v??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));}
+function giftUrl(id){const gid=giftIds[id];return gid?"https://denzyve.github.io/cdn-telegram-gifts/assets/png/gift_"+gid+".png":"";}
+function art(id){const src=giftUrl(id);return src?'<div class="tg-gift-art"><img src="'+src+'" alt=""></div>':'<div class="artifact">✦</div>';}
+function setBalance(v){const h=Number(v).toLocaleString("ru-RU")+' <small>MST</small>';$("balance").innerHTML=h;$("homeBalance").innerHTML=h;$("spinBalance").textContent=Number(v).toLocaleString("ru-RU")+" MST";}
+function toast(t){const e=$("toast");e.textContent=t;e.classList.add("show");setTimeout(()=>e.classList.remove("show"),2400);}
+function showScreen(id){document.querySelectorAll(".screen").forEach(x=>x.classList.toggle("active",x.id===id));document.querySelectorAll(".nav-item").forEach(x=>x.classList.toggle("active",x.dataset.screen===id));window.scrollTo({top:0,behavior:"smooth"});}
+function renderGifts(){const all=roulettes.find(x=>x.id==="classic")?.prizes||[];$("giftGrid").innerHTML=all.map(p=>'<article class="gift-card"><div class="gift-art tg-gift-art">'+art(p.id)+'</div><div class="gift-meta"><div><strong>'+esc(p.name)+'</strong><small>'+esc(p.rarity)+'</small></div><i class="rarity-dot '+(p.rarity==="Легендарный"?"legendary":p.rarity==="Эпический"?"epic":p.rarity==="Редкий"?"rare":"")+'"></i></div></article>').join("");}
+function renderReel(prizes){const reel=$("reel");reel.innerHTML=Array.from({length:18},(_,i)=>{const p=prizes[i%prizes.length];return '<div class="prize-tile"><div class="tile-art">'+art(p.id)+'</div><small>'+esc(p.name)+'</small></div>';}).join("");reel.style.transition="none";reel.style.transform="translateX(0)";void reel.offsetWidth;reel.style.transition="transform 3.2s cubic-bezier(.12,.72,.08,1)";}
+function selectMode(id){activeMode=id;const r=roulettes.find(x=>x.id===id);if(!r)return;document.querySelectorAll(".roulette-mode").forEach(b=>b.classList.toggle("active",b.dataset.mode===id));$("rouletteTitle").textContent=r.title.toUpperCase();$("spinCost").textContent=r.cost+" MST";$("spinButton").innerHTML='КРУТИТЬ <span>✦</span>';renderReel(r.prizes);$("oddsList").innerHTML=r.prizes.map(p=>'<span>'+esc(p.name)+' <b>'+r.odds[p.name]+'%</b></span>').join("");}
+function renderTasks(){const available=tasks.filter(t=>!t.claimed).length;$("taskCount").textContent=available+" из "+tasks.length+" доступны";$("taskList").innerHTML=tasks.map(t=>'<article class="task-card '+(t.claimed?"task-complete":"")+'"><div class="task-card-icon">'+(t.id==="subscribe"?"◉":"☼")+'</div><div class="task-card-copy"><strong>'+esc(t.title)+'</strong><p>'+esc(t.description)+'</p>'+(t.id==="subscribe"?'<a class="task-channel-link" href="https://t.me/MysticDropNFT" target="_blank">Открыть канал ↗</a>':"")+'<span class="task-reward">＋'+t.reward+' MST</span></div><button class="task-claim" data-task="'+t.id+'" '+(t.claimed?"disabled":"")+'>'+(t.claimed?"Получено":t.id==="subscribe"?"Проверить":"Забрать")+'</button></article>').join("");document.querySelectorAll(".task-claim:not(:disabled)").forEach(b=>b.addEventListener("click",()=>claimTask(b.dataset.task,b)));}
+async function claimTask(id,b){b.disabled=true;b.textContent="…";try{const d=await api("/api/tasks/claim",{method:"POST",body:JSON.stringify({task_id:id})});setBalance(d.balance);await loadTasks();toast("Получено +"+d.reward+" MST");}catch(e){b.disabled=false;b.textContent=id==="subscribe"?"Проверить":"Забрать";toast(e.message);}}
+async function loadTasks(){const d=await api("/api/tasks");tasks=d.tasks||[];renderTasks();}
+function renderInventory(){const html=items.length?items.map(i=>'<div class="inventory-item"><div class="item-art tg-gift-art">'+art(i.prize_id)+'</div><div><strong>'+esc(i.prize_name)+'</strong><small>'+esc(i.rarity)+'</small></div></div>').join(""):'<div class="empty-state">Пока здесь пусто</div>';$("inventoryFull").innerHTML=html;$("homeInventory").innerHTML=items.slice(0,3).map(i=>'<div class="inventory-item"><div class="item-art tg-gift-art">'+art(i.prize_id)+'</div><div><strong>'+esc(i.prize_name)+'</strong><small>'+esc(i.rarity)+'</small></div></div>').join("")||'<div class="empty-state">Пока нет выигрышей</div>';$("itemCount").textContent=items.length+" подарков";$("profileItemCount").textContent=items.length;}
+async function spin(){if(spinning)return;const r=roulettes.find(x=>x.id===activeMode);if(!r)return;spinning=true;$("spinButton").disabled=true;$("spinButton").textContent="РУЛЕТКА КРУТИТСЯ…";try{const request_id=crypto.randomUUID();const result=await api("/api/spin",{method:"POST",body:JSON.stringify({request_id,roulette_id:activeMode})});const p=result.prize;const reel=$("reel");const target=8*90+Math.floor(Math.random()*30);reel.style.transform="translateX(-"+target+"px)";setTimeout(()=>{showResult(p);},3250);setBalance(result.balance);const inv=await api("/api/inventory");items=inv.items||[];renderInventory();}catch(e){toast(e.message);spinning=false;$("spinButton").disabled=false;$("spinButton").innerHTML='КРУТИТЬ <span>✦</span>';}}
+function showResult(p){$("resultArt").innerHTML=art(p.id);$("resultName").textContent=p.name;$("resultRarity").textContent=p.rarity;$("resultModal").classList.remove("hidden");spinning=false;$("spinButton").disabled=false;$("spinButton").innerHTML='КРУТИТЬ <span>✦</span>';}
+function loadError(e){$("giftGrid").innerHTML='<div class="setup-message"><strong>Не удалось открыть магазин</strong><p>'+esc(e.message)+'</p><button class="task-claim" onclick="location.reload()">Повторить</button></div>';}
+async function load(){try{const [me,inv,rr]=await Promise.all([api("/api/me"),api("/api/inventory"),api("/api/roulette")]);setBalance(me.balance);const initial=(me.name||"M").slice(0,1).toUpperCase();$("avatar").textContent=initial;$("profileAvatar").textContent=initial;$("profileName").textContent=me.name||"Игрок Mystic";$("profileUsername").textContent=me.username?"@"+me.username:"Telegram account";$("spinCount").textContent=me.spin_count||0;items=inv.items||[];renderInventory();roulettes=rr.roulettes||[];renderGifts();selectMode("classic");await loadTasks();}catch(e){loadError(e);$("taskList").innerHTML='<div class="setup-message"><strong>Задания недоступны</strong><p>'+esc(e.message)+'</p></div>';}}
+document.querySelectorAll(".nav-item").forEach(b=>b.addEventListener("click",()=>showScreen(b.dataset.screen)));$("profileShortcut").addEventListener("click",()=>showScreen("profileScreen"));$("homeBrand").addEventListener("click",e=>{e.preventDefault();showScreen("homeScreen");});$("goRoulette").addEventListener("click",()=>$("rouletteSection").scrollIntoView({behavior:"smooth"}));$("openInventory").addEventListener("click",()=>showScreen("inventoryScreen"));document.querySelectorAll(".roulette-mode").forEach(b=>b.addEventListener("click",()=>selectMode(b.dataset.mode)));$("spinButton").addEventListener("click",spin);$("closeResult").addEventListener("click",()=>$("resultModal").classList.add("hidden"));$("resultModal").addEventListener("click",e=>{if(e.target.id==="resultModal")$("resultModal").classList.add("hidden");});load();
