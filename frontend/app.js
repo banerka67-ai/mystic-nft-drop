@@ -1,11 +1,11 @@
 const tg=window.Telegram?.WebApp;if(tg){tg.ready();tg.expand();}
 const authHeader=tg?.initData?"tma "+tg.initData:"";const $=id=>document.getElementById(id);
 let tasks=[],items=[],roulettes=[],activeMode="classic",spinning=false;
-const giftIds={teddy_bear:"5170233102089322756",red_rose:"5168103777563050263",gift_box:"5170250947678437525",rocket:"5170564780938756245",diamond_ring:"5170690322832818290"};
+
 async function api(path,options={}){const headers={"Content-Type":"application/json",...(authHeader?{Authorization:authHeader}:{}),...(options.headers||{})};const r=await fetch(path,{...options,headers});const d=await r.json().catch(()=>({}));if(!r.ok){const e=new Error(d.error||"Ошибка запроса");e.status=r.status;throw e;}return d;}
 function esc(v){return String(v??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));}
-function giftUrl(id){const gid=giftIds[id];return gid?"https://denzyve.github.io/cdn-telegram-gifts/assets/png/gift_"+gid+".png":"";}
-function art(id,emoji="🎁"){const src=giftUrl(id);return src?'<img src="'+src+'" alt="">':'<span class="gift-emoji" aria-hidden="true">'+esc(emoji)+'</span>';}
+function giftUrl(id){return "/api/gift-art/"+encodeURIComponent(id);}
+function art(id,emoji="🎁"){const src=giftUrl(id);return '<img src="'+src+'" alt="" loading="lazy" onerror="this.style.display=\'none\';this.nextElementSibling.hidden=false"><span class="gift-emoji" hidden aria-hidden="true">'+esc(emoji)+'</span>';}
 function setBalance(v){const h=Number(v).toLocaleString("ru-RU")+' <small>MST</small>';$("balance").innerHTML=h;$("homeBalance").innerHTML=h;$("spinBalance").textContent=Number(v).toLocaleString("ru-RU")+" MST";}
 function toast(t){const e=$("toast");e.textContent=t;e.classList.add("show");setTimeout(()=>e.classList.remove("show"),2400);}
 function showScreen(id){document.querySelectorAll(".screen").forEach(x=>x.classList.toggle("active",x.id===id));document.querySelectorAll(".nav-item").forEach(x=>x.classList.toggle("active",x.dataset.screen===id));window.scrollTo({top:0,behavior:"smooth"});}
