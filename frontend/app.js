@@ -43,15 +43,19 @@ function renderTasks() {
       <div class="task-card-copy">
         <strong>${escapeHtml(task.title)}</strong>
         <p>${escapeHtml(task.description)}</p>
+        ${task.id==="subscribe"?'<a class="task-channel-link" href="https://t.me/MysticDropNFT">Открыть канал ↗</a>':""}
         <span class="task-reward">＋${task.reward} MST</span>
       </div>
-      <button class="task-claim" data-task="${task.id}" ${task.claimed?"disabled":""}>${task.claimed?"Получено":"Забрать"}</button>
+      <button class="task-claim" data-task="${task.id}" ${task.claimed?"disabled":""}>${task.claimed?"Получено":(task.id==="subscribe"?"Проверить":"Забрать")}</button>
     </article>`).join("");
   document.querySelectorAll(".task-claim:not(:disabled)").forEach(button=>button.addEventListener("click",()=>claimTask(button.dataset.task,button)));
 }
 async function claimTask(id,button) {
   button.disabled=true; button.textContent="…";
   try {
+    if(id==="subscribe" && tg?.openTelegramLink) {
+      // Keep the claim action explicit; the channel link above opens the channel.
+    }
     const result=await api("/api/tasks/claim",{method:"POST",body:JSON.stringify({task_id:id})});
     setBalance(result.balance);
     await loadTasks();
