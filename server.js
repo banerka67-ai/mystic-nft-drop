@@ -345,7 +345,7 @@ app.post("/api/mines/start", auth, requireSubscription, (req,res) => {
       db.prepare("INSERT INTO mines_games(id,telegram_id,bet,bombs_json,revealed_json) VALUES(?,?,?,?,?)").run(id,req.user.id,bet,JSON.stringify([...bombs]),"[]");
       return getUser.get(req.user.id).balance;
     });
-    const balance = run();
+    const balance = run.immediate();
     res.json({ game_id:id, bet, bombs_count:4, balance, grid_size:25 });
   } catch(err) { apiError(res,err); }
 });
