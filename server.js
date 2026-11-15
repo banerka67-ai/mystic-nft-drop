@@ -674,14 +674,14 @@ app.post("/telegram/webhook", async (req, res) => {
     const valid = !!order && order.status === "pending" &&
       order.telegram_id === String(query.from?.id || "") &&
       query.currency === "XTR" && Number(query.total_amount) === order.stars;
-    res.sendStatus(200);
-    telegramApi("answerPreCheckoutQuery", {
-      pre_checkout_query_id:query.id, ok:valid,
-      ...(!valid ? {error_message:"Счёт не найден или его данные не совпадают. Создай новый счёт."} : {})
-    }).catch(err => console.error("Stars pre-checkout failed:",err.message));
-    return;
+    try {
+      await telegramApi("answerPreCheckoutQuery", {
+        pre_checkout_query_id:query.id, ok:valid,
+        ...(!valid ? {error_message:"Счёт не найден или его данные не совпадают. Создай новый счёт."} : {})
+      });
+    } catch(err) { console.error("Stars pre-checkout failed:",err.message); }
+    return res.sendStatus(200);
   }
-  res.sendStatus(200);
   const message = req.body?.message;
   const chatId = message?.chat?.id;
   const senderId = message?.from?.id ? String(message.from.id) : "";
@@ -712,8 +712,9 @@ app.post("/telegram/webhook", async (req, res) => {
         console.warn("Stars payment ignored: invalid, duplicate or already processed payment");
       }
     } catch(err) { console.error("Stars payment processing failed:",err.message); }
-    return;
+    return res.sendStatus(200);
   }
+  res.sendStatus(200);
   const text = String(message?.text || "").trim();
   if (!chatId || !text) return;
 
