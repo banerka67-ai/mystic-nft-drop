@@ -209,7 +209,10 @@ async function telegramMember(userId, allowLocalDev = false) {
     body: JSON.stringify({ chat_id: CHANNEL, user_id: Number(userId) })
   });
   const data = await response.json();
-  if (!response.ok || !data.ok) throw Object.assign(new Error("Не удалось проверить подписку. Попробуй позже."), { status: 502 });
+  if (!response.ok || !data.ok) {
+    console.error("Telegram getChatMember failed:", data.description || response.status);
+    throw Object.assign(new Error("Telegram не дал проверить подписку. Добавь бота администратором канала @MysticDropNFT и попробуй снова."), { status: 502 });
+  }
   const status = data.result?.status || "left";
   return { subscribed: ["creator", "administrator", "member"].includes(status) || (status === "restricted" && data.result?.is_member === true), status };
 }
@@ -304,8 +307,7 @@ app.get("/api/roulette", auth, async (req,res) => {
     const liveRoulettes = buildRoulettes(gifts);
     const rouletteList = Object.values(liveRoulettes).map(r => ({
       id:r.id, title:r.title, cost:r.cost,
-      prizes:r.prizes.map(safePrize),
-      odds:Object.fromEntries(r.prizes.map(p => [p.name + " (" + p.star_count + " ⭐)", p.weight]))
+      prizes:r.prizes.map(p => ({ ...safePrize(p), chance:Number((p.weight / r.prizes.reduce((sum,x) => sum + x.weight, 0) * 100).toFixed(2)) }))
     }));
     res.json({
       roulettes: rouletteList,
