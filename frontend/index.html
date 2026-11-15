@@ -4,124 +4,68 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
   <meta name="theme-color" content="#0b0b10">
-  <title>Mystic Drop</title>
+  <title>Mystic Drop — задания</title>
   <script src="https://telegram.org/js/telegram-web-app.js"></script>
-  <link rel="stylesheet" href="/static/style.css?v=telegram-gifts-1">
+  <link rel="stylesheet" href="/static/style.css?v=tasks-1">
 </head>
 <body>
   <div class="app-shell">
     <header class="topbar">
       <a class="brand-lockup" href="#" id="homeBrand">
         <div class="brand-symbol">M</div>
-        <div><div class="brand">MYSTIC<span>DROP</span></div><div class="subtitle">DIGITAL COLLECTIBLES</div></div>
+        <div><div class="brand">MYSTIC<span>DROP</span></div><div class="subtitle">COLLECT · COMPLETE · REWARD</div></div>
       </a>
       <button class="profile-shortcut" id="profileShortcut" aria-label="Профиль"><span id="avatar">M</span></button>
     </header>
-
     <main>
       <section class="screen active" id="homeScreen">
-        <section class="hero">
+        <section class="hero tasks-hero">
           <div class="hero-copy">
-            <div class="eyebrow"><i></i> LIMITED COLLECTION</div>
-            <h1>Открой свою<br><em>коллекцию.</em></h1>
-            <p>Цифровые подарки. Редкие находки.<br>Твоя история начинается здесь.</p>
-            <button class="hero-button" id="heroSpin">Открыть рулетку <span>↗</span></button>
+            <div class="eyebrow"><i></i> MYSTIC REWARDS</div>
+            <h1>Выполняй<br><em>задания.</em></h1>
+            <p>Простые действия — награды на твой баланс.</p>
+            <div class="task-balance"><span>ТВОЙ БАЛАНС</span><strong id="homeBalance">0 <small>MST</small></strong></div>
           </div>
-          <div class="hero-orb"><div class="orb-core"></div><div class="orb-ring"></div><div class="orb-spark s1"></div><div class="orb-spark s2"></div></div>
-          <div class="hero-index">MYSTIC / 001</div>
+          <div class="hero-orb"><div class="orb-core"></div><div class="orb-ring"></div></div>
         </section>
-
-        <section class="daily-card" id="dailyCard">
-          <div class="daily-icon">✦</div>
-          <div class="daily-copy"><div class="eyebrow">DAILY MYSTIC</div><strong>Ежедневный бонус</strong><small id="dailyStatus">Забирай 100 MST каждый день</small></div>
-          <button class="daily-claim" id="dailyClaim">ЗАБРАТЬ</button>
+        <section class="task-summary">
+          <div><span class="eyebrow">ДОСТУПНЫЕ ЗАДАНИЯ</span><strong id="taskCount">Загрузка…</strong></div>
+          <span class="task-summary-icon">✦</span>
         </section>
-        <section class="feature-banner" id="minesShortcut">
-          <div><div class="eyebrow">NEW GAME MODE</div><strong>MINES <span>5×5</span></strong><small>Открывай безопасные кристаллы и забирай виртуальные MST</small></div>
-          <div class="feature-gem">✧</div>
-        </section>
-        <section class="section-heading">
-          <div><div class="eyebrow">DISCOVER</div><h2>Коллекция подарков</h2></div>
-          <span class="section-count">05 ITEMS</span>
-        </section>
-        <section class="gift-grid" id="giftShowcase">
-          <article class="gift-card"><div class="gift-art tg-gift-art"><img src="https://denzyve.github.io/cdn-telegram-gifts/assets/png/gift_5170233102089322756.png" alt="Teddy Bear" loading="lazy"></div><div class="gift-meta"><div><strong>Teddy Bear</strong><small>COMMON · 01</small></div><span class="rarity-dot common"></span></div></article>
-          <article class="gift-card"><div class="gift-art tg-gift-art"><img src="https://denzyve.github.io/cdn-telegram-gifts/assets/png/gift_5168103777563050263.png" alt="Red Rose" loading="lazy"></div><div class="gift-meta"><div><strong>Red Rose</strong><small>COMMON · 02</small></div><span class="rarity-dot common"></span></div></article>
-          <article class="gift-card"><div class="gift-art tg-gift-art"><img src="https://denzyve.github.io/cdn-telegram-gifts/assets/png/gift_5170250947678437525.png" alt="Gift Box" loading="lazy"></div><div class="gift-meta"><div><strong>Gift Box</strong><small>RARE · 03</small></div><span class="rarity-dot rare"></span></div></article>
-          <article class="gift-card"><div class="gift-art tg-gift-art"><img src="https://denzyve.github.io/cdn-telegram-gifts/assets/png/gift_5170564780938756245.png" alt="Rocket" loading="lazy"></div><div class="gift-meta"><div><strong>Rocket</strong><small>EPIC · 04</small></div><span class="rarity-dot epic"></span></div></article>
-          <article class="gift-card"><div class="gift-art tg-gift-art"><img src="https://denzyve.github.io/cdn-telegram-gifts/assets/png/gift_5170690322832818290.png" alt="Diamond Ring" loading="lazy"></div><div class="gift-meta"><div><strong>Diamond Ring</strong><small>LEGENDARY · 05</small></div><span class="rarity-dot legendary"></span></div></article>
-        </section>
-
-        <section class="roulette-section" id="rouletteSection">
-          <div class="section-heading"><div><div class="eyebrow">TAKE YOUR CHANCE</div><h2>Рулетка подарков</h2></div><span class="live-tag">● LIVE</span></div>
-          <div class="roulette-modes" id="rouletteModes"><button class="roulette-mode active" data-roulette="classic">CLASSIC <small>100 MST</small></button><button class="roulette-mode" data-roulette="premium">PREMIUM <small>250 MST</small></button><button class="roulette-mode" data-roulette="legendary">LEGEND <small>500 MST</small></button></div>
-          <div class="roulette-card">
-            <div class="roulette-caption"><span>ВЫБЕРИ СВОЙ АРТЕФАКТ</span><span>01 / 05</span></div>
-            <div class="pointer"></div>
-            <div class="reel-window"><div class="reel" id="reel"></div></div>
-            <div class="roulette-bottom"><span>Стоимость попытки</span><strong id="rouletteCost">100 MST</strong></div><div class="odds-list" id="oddsList"></div>
-          </div>
-          <button class="primary-btn" id="spinBtn">КРУТИТЬ РУЛЕТКУ <span>↗</span></button>
-          <p class="hint" id="hint">Все предметы в демо-версии виртуальные.</p>
-        </section>
-
-        <section class="section-heading inventory-heading"><div><div class="eyebrow">YOUR COLLECTION</div><h2>Последние находки</h2></div><button class="text-link" id="seeInventory">Все предметы ↗</button></section>
-        <div class="inventory-list" id="inventory"><div class="empty-state">Твои находки появятся здесь</div></div>
+        <section class="section-heading"><div><div class="eyebrow">GET REWARDS</div><h2>Список заданий</h2></div></section>
+        <div class="tasks-list" id="taskList"><div class="empty-state">Загружаем задания…</div></div>
+        <p class="hint task-footnote">MST — внутренняя виртуальная валюта приложения. Это не деньги и не Telegram Stars.</p>
       </section>
-
-      <section class="screen" id="minesScreen">
-        <div class="page-heading"><div class="eyebrow">MYSTIC CHALLENGE</div><h1>MINES <em>5×5</em></h1><p>На поле 4 мины. Открывай кристаллы и забирай виртуальные MST, пока не попалась мина.</p></div>
-        <div class="mines-panel">
-          <div class="mines-topline"><span>МИНЫ <b>04</b></span><span id="minesMultiplier">×1.00</span></div>
-          <div class="mines-grid" id="minesGrid"><button class="mine-cell" data-cell="0" aria-label="Клетка 1">✦</button><button class="mine-cell" data-cell="1" aria-label="Клетка 2">✦</button><button class="mine-cell" data-cell="2" aria-label="Клетка 3">✦</button><button class="mine-cell" data-cell="3" aria-label="Клетка 4">✦</button><button class="mine-cell" data-cell="4" aria-label="Клетка 5">✦</button><button class="mine-cell" data-cell="5" aria-label="Клетка 6">✦</button><button class="mine-cell" data-cell="6" aria-label="Клетка 7">✦</button><button class="mine-cell" data-cell="7" aria-label="Клетка 8">✦</button><button class="mine-cell" data-cell="8" aria-label="Клетка 9">✦</button><button class="mine-cell" data-cell="9" aria-label="Клетка 10">✦</button><button class="mine-cell" data-cell="10" aria-label="Клетка 11">✦</button><button class="mine-cell" data-cell="11" aria-label="Клетка 12">✦</button><button class="mine-cell" data-cell="12" aria-label="Клетка 13">✦</button><button class="mine-cell" data-cell="13" aria-label="Клетка 14">✦</button><button class="mine-cell" data-cell="14" aria-label="Клетка 15">✦</button><button class="mine-cell" data-cell="15" aria-label="Клетка 16">✦</button><button class="mine-cell" data-cell="16" aria-label="Клетка 17">✦</button><button class="mine-cell" data-cell="17" aria-label="Клетка 18">✦</button><button class="mine-cell" data-cell="18" aria-label="Клетка 19">✦</button><button class="mine-cell" data-cell="19" aria-label="Клетка 20">✦</button><button class="mine-cell" data-cell="20" aria-label="Клетка 21">✦</button><button class="mine-cell" data-cell="21" aria-label="Клетка 22">✦</button><button class="mine-cell" data-cell="22" aria-label="Клетка 23">✦</button><button class="mine-cell" data-cell="23" aria-label="Клетка 24">✦</button><button class="mine-cell" data-cell="24" aria-label="Клетка 25">✦</button></div>
-          <label class="bet-label" for="minesBet">Ставка в виртуальных MST</label>
-          <input class="bet-input" id="minesBet" type="number" min="1" max="10000" value="25">
-          <div class="mines-actions"><button class="primary-btn" id="minesStart">НАЧАТЬ ИГРУ</button><button class="primary-btn cashout-btn" id="minesCashout" disabled>ЗАБРАТЬ ВЫИГРЫШ</button></div>
-          <p class="hint" id="minesHint">Это игровая механика на виртуальных баллах. Денежных ставок и выплат нет.</p>
-        </div>
-      </section>
-
       <section class="screen" id="inventoryScreen">
-        <div class="page-heading"><div class="eyebrow">YOUR ITEMS</div><h1>Инвентарь</h1><p>Все подарки, которые ты получил.</p></div>
+        <div class="page-heading"><div class="eyebrow">YOUR COLLECTION</div><h1>Инвентарь</h1><p>Подарки, полученные в приложении.</p></div>
         <div class="inventory-list inventory-full" id="inventoryFull"><div class="empty-state">Пока здесь пусто</div></div>
       </section>
-
       <section class="screen" id="profileScreen">
-        <div class="page-heading"><div class="eyebrow">ACCOUNT</div><h1>Профиль</h1><p>Твой аккаунт и игровые средства.</p></div>
+        <div class="page-heading"><div class="eyebrow">ACCOUNT</div><h1>Профиль</h1><p>Твой аккаунт Mystic Drop.</p></div>
         <section class="account-card">
           <div class="account-avatar" id="profileAvatar">M</div>
-          <div><strong id="profileName">Игрок Mystic</strong><small id="profileUsername">@telegram_user</small></div>
+          <div><strong id="profileName">Игрок Mystic</strong><small id="profileUsername">Telegram account</small></div>
           <span class="account-mark">✦</span>
         </section>
         <section class="wallet-card">
           <div class="wallet-top"><span>ТВОЙ БАЛАНС</span><span class="wallet-currency">MST</span></div>
-          <div class="wallet-value" id="balance">— <small>MST</small></div>
+          <div class="wallet-value" id="balance">0 <small>MST</small></div>
           <div class="wallet-bottom"><span>Внутренняя валюта Mystic</span><span id="itemCount">0 предметов</span></div>
         </section>
-        <section class="topup-block stars-guide">
-          <div class="section-heading"><div><div class="eyebrow">TELEGRAM STARS</div><h2>Как купить Stars</h2></div><span class="stars-mark">★</span></div>
-          <p class="topup-description">Для покупки Stars заказчик рекомендует воспользоваться ботом-партнёром.</p>
-          <div class="stars-steps">
-            <div class="stars-step"><span>01</span><p>Нажми кнопку ниже, чтобы открыть <strong>@Starbuy1bot</strong>.</p></div>
-            <div class="stars-step"><span>02</span><p>Нажми <strong>«Запустить»</strong> и выбери нужное количество Stars в меню бота.</p></div>
-            <div class="stars-step"><span>03</span><p>Следуй инструкциям бота и проверь, что заказ выполнен.</p></div>
-            <div class="stars-step"><span>04</span><p>После покупки вернись в Mystic Drop.</p></div>
-          </div>
-          <a class="primary-btn stars-bot-link" id="openStarsBot" href="https://t.me/Starbuy1bot">ОТКРЫТЬ @STARBUY1BOT <span>↗</span></a>
-          <p class="payment-note">Важно: @Starbuy1bot — сторонний бот. Покупка Stars в нём сама по себе не пополняет внутренний баланс MST. Автоматическое зачисление пока не подключено.</p>
+        <section class="profile-stats">
+          <div><strong id="taskDone">0</strong><small>Получено наград</small></div>
+          <div><strong id="profileItemCount">0</strong><small>Подарков</small></div>
         </section>
-        <section class="profile-stats"><div><strong id="spinCount">—</strong><small>Рулеток</small></div><div><strong id="profileItemCount">0</strong><small>Подарков</small></div></section><section class="history-section"><div class="section-heading"><div><div class="eyebrow">ACTIVITY</div><h2>Последние действия</h2></div></div><div id="historyList" class="history-list"><div class="empty-state">История пока пуста</div></div></section>
+        <p class="payment-note">Баланс MST и предметы являются виртуальными. Пополнение через сторонние сервисы, вывод средств и автоматическая выдача Telegram Gifts не подключены.</p>
       </section>
     </main>
-
     <nav class="bottom-nav">
-      <button class="nav-item active" data-screen="homeScreen"><span>⌂</span>Главная</button>
-      <button class="nav-item" data-screen="minesScreen"><span>✧</span>MINES</button>\n      <button class="nav-item" data-screen="inventoryScreen"><span>◇</span>Инвентарь</button>
+      <button class="nav-item active" data-screen="homeScreen"><span>✦</span>Задания</button>
+      <button class="nav-item" data-screen="inventoryScreen"><span>◇</span>Инвентарь</button>
       <button class="nav-item" data-screen="profileScreen"><span>○</span>Профиль</button>
     </nav>
   </div>
-
-  <div class="modal hidden" id="resultModal"><div class="modal-card"><div class="modal-glow"></div><div class="eyebrow">ТВОЯ НАХОДКА</div><div class="result-art" id="resultArt"><div class="artifact crystal-art"></div></div><h2 id="resultName">Crystal</h2><div class="rarity" id="resultRarity">Редкий</div><button class="primary-btn" id="closeModal">ПРОДОЛЖИТЬ</button></div></div>
-  <script src="/static/app.js?v=telegram-gifts-1"></script>
+  <div class="toast" id="toast"></div>
+  <script src="/static/app.js?v=tasks-1"></script>
 </body>
 </html>
