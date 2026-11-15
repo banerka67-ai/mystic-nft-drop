@@ -107,37 +107,55 @@ CREATE INDEX IF NOT EXISTS idx_inventory_user ON inventory(telegram_id, id DESC)
 CREATE INDEX IF NOT EXISTS idx_mines_user ON mines_games(telegram_id, status);
 `);
 
-const ROULETTES = {
-  classic: {
-    id: "classic", title: "Mystic Classic", cost: 100,
-    prizes: [
-      { id: "teddy_bear", name: "Teddy Bear", emoji: "🧸", rarity: "Обычный", gift_id: "5170233102089322756", weight: 48 },
-      { id: "red_rose", name: "Red Rose", emoji: "🌹", rarity: "Обычный", gift_id: "5168103777563050263", weight: 30 },
-      { id: "gift_box", name: "Gift Box", emoji: "🎁", rarity: "Редкий", gift_id: "5170250947678437525", weight: 15 },
-      { id: "rocket", name: "Rocket", emoji: "🚀", rarity: "Эпический", gift_id: "5170564780938756245", weight: 6 },
-      { id: "diamond_ring", name: "Diamond Ring", emoji: "💍", rarity: "Легендарный", gift_id: "5170690322832818290", weight: 1 }
-    ]
-  },
-  premium: {
-    id: "premium", title: "Mystic Premium", cost: 250,
-    prizes: [
-      { id: "teddy_bear", name: "Teddy Bear", emoji: "🧸", rarity: "Обычный", gift_id: "5170233102089322756", weight: 35 },
-      { id: "red_rose", name: "Red Rose", emoji: "🌹", rarity: "Обычный", gift_id: "5168103777563050263", weight: 30 },
-      { id: "gift_box", name: "Gift Box", emoji: "🎁", rarity: "Редкий", gift_id: "5170250947678437525", weight: 22 },
-      { id: "rocket", name: "Rocket", emoji: "🚀", rarity: "Эпический", gift_id: "5170564780938756245", weight: 10 },
-      { id: "diamond_ring", name: "Diamond Ring", emoji: "💍", rarity: "Легендарный", gift_id: "5170690322832818290", weight: 3 }
-    ]
-  },
-  legendary: {
-    id: "legendary", title: "Mystic Legend", cost: 500,
-    prizes: [
-      { id: "teddy_bear", name: "Teddy Bear", emoji: "🧸", rarity: "Обычный", gift_id: "5170233102089322756", weight: 20 },
-      { id: "red_rose", name: "Red Rose", emoji: "🌹", rarity: "Обычный", gift_id: "5168103777563050263", weight: 25 },
-      { id: "gift_box", name: "Gift Box", emoji: "🎁", rarity: "Редкий", gift_id: "5170250947678437525", weight: 30 },
-      { id: "rocket", name: "Rocket", emoji: "🚀", rarity: "Эпический", gift_id: "5170564780938756245", weight: 18 },
-      { id: "diamond_ring", name: "Diamond Ring", emoji: "💍", rarity: "Легендарный", gift_id: "5170690322832818290", weight: 7 }
-    ]
-  }};
+const ROULETTE_MODES = {
+  classic: { id: "classic", title: "Mystic Classic", cost: 100, exponent: 2.1 },
+  premium: { id: "premium", title: "Mystic Premium", cost: 250, exponent: 1.25 },
+  legendary: { id: "legendary", title: "Mystic Legend", cost: 500, exponent: 0.72 }
+};
+let ROULETTES = {};
+let giftsCache = { at: 0, gifts: [] };
+
+async function getAvailableTelegramGifts() {
+  if (!BOT_TOKEN) throw Object.assign(new Error("На сервере не настроен BOT_TOKEN"), { status: 503 });
+  if (giftsCache.gifts.length && Date.now() - giftsCache.at < 60_000) return giftsCache.gifts;
+  const response = await fetch("https://api.telegram.org/bot" + BOT_TOKEN + "/getAvailableGifts");
+  const data = await response.json().catch(() => ({}));
+  if (!response.ok || !data.ok) {
+    console.error("Telegram getAvailableGifts failed:", data.description || response.status);
+    throw Object.assign(new Error("Telegram не вернул список подарков. Проверь BOT_TOKEN и доступность Bot API."), { status: 502 });
+  }
+  const gifts = (data.result?.gifts || []).filter(g => g && g.id && g.sticker);
+  if (!gifts.length) throw Object.assign(new Error("Сейчас Telegram не вернул доступные подарки для бота."), { status: 503 });
+  giftsCache = { at: Date.now(), gifts };
+  return gifts;
+}
+
+function buildRoulettes(gifts) {
+  const sorted = [...gifts].sort((a,b) => Number(a.star_count || 0) - Number(b.star_count || 0));
+  const result = {};
+  for (const mode of Object.values(ROULETTE_MODES)) {
+    const prizes = sorted.map((gift, index) => {
+      const emoji = gift.sticker?.emoji || "🎁";
+      const stars = Number(gift.star_count || 0);
+      const percentile = sorted.length <= 1 ? 0 : index / (sorted.length - 1);
+      const rarity = percentile >= .9 ? "Легендарный" : percentile >= .7 ? "Эпический" : percentile >= .4 ? "Редкий" : "Обычный";
+      const weight = Math.max(1, Math.round(10000 / Math.pow(index + 1, mode.exponent)));
+      return {
+        id: String(gift.id),
+        gift_id: String(gift.id),
+        name: emoji + " Telegram Gift",
+        emoji,
+        rarity,
+        star_count: stars,
+        limited: Number.isFinite(gift.remaining_count) ? gift.remaining_count : null,
+        weight
+      };
+    });
+    result[mode.id] = { id: mode.id, title: mode.title, cost: mode.cost, prizes };
+  }
+  ROULETTES = result;
+  return result;
+}
 const SPIN_STMT = db.prepare("INSERT INTO spins(telegram_id, request_id, roulette_id, prize_id, cost) VALUES(?,?,?,?,?)");
 const getUser = db.prepare("SELECT * FROM users WHERE telegram_id = ?");
 const createUser = db.prepare("INSERT OR IGNORE INTO users(telegram_id, first_name, username, balance) VALUES(?,?,?,0)");
@@ -280,20 +298,31 @@ app.post("/api/tasks/claim", auth, async (req,res) => {
   } catch(err) { apiError(res,err); }
 });
 
-app.get("/api/roulette", auth, requireSubscription, (req,res) => {
-  const rouletteList = Object.values(ROULETTES).map(r => ({
-    id:r.id, title:r.title, cost:r.cost, prizes:r.prizes.map(safePrize),
-    odds:Object.fromEntries(r.prizes.map(p => [p.name, p.weight]))
-  }));
-  res.json({ roulettes: rouletteList, ...rouletteList[0], notice: "Только виртуальные предметы и баллы. Вероятности указаны открыто." });
+app.get("/api/roulette", auth, async (req,res) => {
+  try {
+    const gifts = await getAvailableTelegramGifts();
+    const liveRoulettes = buildRoulettes(gifts);
+    const rouletteList = Object.values(liveRoulettes).map(r => ({
+      id:r.id, title:r.title, cost:r.cost,
+      prizes:r.prizes.map(safePrize),
+      odds:Object.fromEntries(r.prizes.map(p => [p.name + " (" + p.star_count + " ⭐)", p.weight]))
+    }));
+    res.json({
+      roulettes: rouletteList,
+      ...rouletteList[0],
+      gift_count: gifts.length,
+      notice: "Каталог загружается из Telegram Bot API. Выигрыш пока сохраняется в виртуальном инвентаре приложения."
+    });
+  } catch(err) { apiError(res,err); }
 });
 
-app.post("/api/spin", auth, requireSubscription, (req,res) => {
+app.post("/api/spin", auth, requireSubscription, async (req,res) => {
   try {
     const { request_id, roulette_id = "classic" } = req.body || {};
     if (!requireBodyString(request_id)) return res.status(400).json({ error: "Некорректный request_id" });
-    if (typeof roulette_id !== "string" || !ROULETTES[roulette_id]) return res.status(400).json({ error: "Неизвестная рулетка" });
-    const roulette = ROULETTES[roulette_id];
+    if (typeof roulette_id !== "string" || !ROULETTE_MODES[roulette_id]) return res.status(400).json({ error: "Неизвестная рулетка" });
+    const gifts = await getAvailableTelegramGifts();
+    const roulette = buildRoulettes(gifts)[roulette_id];
     const perform = db.transaction(() => {
       createUser.run(req.user.id, req.user.first_name, req.user.username);
       const existing = db.prepare("SELECT roulette_id, prize_id FROM spins WHERE telegram_id=? AND request_id=?").get(req.user.id, request_id);
