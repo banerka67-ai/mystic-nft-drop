@@ -200,7 +200,7 @@ async function claimTask(id, button) {
     });
     setBalance(result.balance);
     await loadTasks();
-    toast("Получено +" + result.reward + " MST");
+    toast(result.already_claimed ? "Эта награда уже получена." : "Получено +" + result.reward + " MST");
   } catch (error) {
     button.disabled = false;
     button.textContent = id === "subscribe" ? "Проверить" : "Забрать";
