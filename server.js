@@ -428,7 +428,7 @@ app.get("/api/history", auth, requireSubscription, (req,res) => {
 
 app.get("/api/mines/active", auth, requireSubscription, (req,res) => {
   const row = db.prepare("SELECT id, bet, revealed_json, multiplier FROM mines_games WHERE telegram_id=? AND status='active' ORDER BY created_at DESC LIMIT 1").get(req.user.id);
-  if (!row) return res.json({ active:false });
+  if (!row) return res.json({ active:false, min_bet:1, max_bet:MINES_MAX_BET, max_payout:MINES_MAX_PAYOUT });
   res.json({
     active:true,
     game_id:row.id,
