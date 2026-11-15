@@ -568,11 +568,11 @@ app.post("/telegram/webhook", async (req, res) => {
   if (!chatId || !text) return;
 
   const reply = (body) => telegramApi("sendMessage", { chat_id: chatId, text: body });
-  const giveMatch = text.match(/^\/give(?:@\w+)?\\s+(\\d{1,20})\\s+(\\d{1,9})$/i);
-  const balanceMatch = text.match(/^\/balance(?:@\w+)?\\s+(\\d{1,20})$/i);
+  const giveMatch = text.match(/^\/give(?:@\w+)?\s+(\d{1,20})\s+(\d{1,9})$/i);
+  const balanceMatch = text.match(/^\/balance(?:@\w+)?\s+(\d{1,20})$/i);
 
   try {
-    if (/^\/start(?:@\\w+)?(?:\\s|$)/i.test(text)) {
+    if (/^\/start(?:@\w+)?(?:\s|$)/i.test(text)) {
       await telegramApi("sendMessage", {
         chat_id: chatId,
         text: "Добро пожаловать в MYSTIC NFT DROP! Нажми кнопку ниже, чтобы открыть приложение.",
