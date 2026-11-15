@@ -2,25 +2,25 @@ const tg = window.Telegram?.WebApp;
 if (tg) { tg.ready(); tg.expand(); }
 const authHeader = tg?.initData ? "tma " + tg.initData : "";
 const $ = id => document.getElementById(id);
-let currentBalance = 0;
-let currentItems = [];
 let tasks = [];
+let currentItems = [];
 
 async function api(path, options = {}) {
-  const response = await fetch(path, {
-    ...options,
-    headers: { "Content-Type":"application/json", ...(authHeader ? {Authorization:authHeader} : (!tg ? {"x-dev-mode":"true"} : {})), ...(options.headers || {}) }
-  });
+  const headers = { "Content-Type":"application/json", ...(authHeader ? {Authorization:authHeader} : {}), ...(options.headers || {}) };
+  const response = await fetch(path, {...options, headers});
   const data = await response.json().catch(()=>({}));
-  if (!response.ok) throw new Error(data.error || "Ошибка запроса");
+  if (!response.ok) {
+    const error = new Error(data.error || "Ошибка запроса");
+    error.status = response.status;
+    throw error;
+  }
   return data;
 }
 function escapeHtml(value) {
   return String(value ?? "").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
 }
 function setBalance(value) {
-  currentBalance = Number(value);
-  const html = currentBalance.toLocaleString("ru-RU")+" <small>MST</small>";
+  const html = Number(value).toLocaleString("ru-RU")+" <small>MST</small>";
   $("balance").innerHTML = html;
   $("homeBalance").innerHTML = html;
 }
@@ -32,6 +32,15 @@ function showScreen(id) {
 function toast(message) {
   const el=$("toast"); el.textContent=message; el.classList.add("show");
   setTimeout(()=>el.classList.remove("show"),2400);
+}
+function renderLoadError(error) {
+  const isAuth = error.status === 401 || /Открой приложение через Telegram|авторизац/i.test(error.message);
+  $("taskList").innerHTML = isAuth
+    ? '<div class="setup-message"><div class="setup-icon">↗</div><strong>Открой Mystic Drop через Telegram</strong><p>Авторизация доступна только при запуске Mini App из Telegram. Открой чат своего бота и нажми кнопку приложения.</p><small>Если ты уже открыл его через Telegram — закрой Mini App и запусти заново.</small></div>'
+    : '<div class="setup-message"><div class="setup-icon">!</div><strong>Не удалось загрузить приложение</strong><p>'+escapeHtml(error.message)+'</p><button class="task-claim" id="retryLoad">Повторить</button></div>';
+  const retry=$("retryLoad");
+  if(retry) retry.addEventListener("click",load);
+  $("taskCount").textContent="Не удалось загрузить";
 }
 function renderTasks() {
   const available=tasks.filter(t=>!t.claimed).length;
@@ -51,17 +60,15 @@ function renderTasks() {
   document.querySelectorAll(".task-claim:not(:disabled)").forEach(button=>button.addEventListener("click",()=>claimTask(button.dataset.task,button)));
 }
 async function claimTask(id,button) {
+  const originalText=id==="subscribe"?"Проверить":"Забрать";
   button.disabled=true; button.textContent="…";
   try {
-    if(id==="subscribe" && tg?.openTelegramLink) {
-      // Keep the claim action explicit; the channel link above opens the channel.
-    }
     const result=await api("/api/tasks/claim",{method:"POST",body:JSON.stringify({task_id:id})});
     setBalance(result.balance);
     await loadTasks();
     toast("Получено +"+result.reward+" MST");
   } catch(error) {
-    button.disabled=false; button.textContent="Забрать";
+    button.disabled=false; button.textContent=originalText;
     toast(error.message);
   }
 }
@@ -71,27 +78,22 @@ async function loadTasks() {
   renderTasks();
 }
 function giftImage(id) {
-  const ids={
-    teddy_bear:"5170233102089322756",
-    red_rose:"5168103777563050263",
-    gift_box:"5170250947678437525",
-    rocket:"5170564780938756245",
-    diamond_ring:"5170690322832818290"
-  };
+  const ids={teddy_bear:"5170233102089322756",red_rose:"5168103777563050263",gift_box:"5170250947678437525",rocket:"5170564780938756245",diamond_ring:"5170690322832818290"};
   const gift=ids[id];
   return gift?"https://denzyve.github.io/cdn-telegram-gifts/assets/png/gift_"+gift+".png":"";
 }
 function renderInventory(items) {
   currentItems=items||[];
-  const markup=currentItems.length?currentItems.map(item=>{
+  $("inventoryFull").innerHTML=currentItems.length?currentItems.map(item=>{
     const src=giftImage(item.prize_id);
     return `<div class="inventory-item"><div class="item-art tg-gift-art">${src?`<img src="${src}" alt="">`:"✦"}</div><div><strong>${escapeHtml(item.prize_name)}</strong><small>${escapeHtml(item.rarity)}</small></div></div>`;
   }).join(""):'<div class="empty-state">Пока здесь пусто</div>';
-  $("inventoryFull").innerHTML=markup;
   $("itemCount").textContent=currentItems.length+" предметов";
   $("profileItemCount").textContent=currentItems.length;
 }
 async function load() {
+  $("taskList").innerHTML='<div class="empty-state">Загружаем задания…</div>';
+  $("taskCount").textContent="Загрузка…";
   try {
     const [me,inventory]=await Promise.all([api("/api/me"),api("/api/inventory")]);
     setBalance(me.balance);
@@ -103,7 +105,7 @@ async function load() {
     renderInventory(inventory.items);
     await loadTasks();
   } catch(error) {
-    $("taskList").innerHTML='<div class="empty-state">'+escapeHtml(error.message)+'</div>';
+    renderLoadError(error);
   }
 }
 document.querySelectorAll(".nav-item").forEach(button=>button.addEventListener("click",()=>showScreen(button.dataset.screen)));
