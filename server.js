@@ -107,7 +107,8 @@ CREATE INDEX IF NOT EXISTS idx_inventory_user ON inventory(telegram_id, id DESC)
 CREATE INDEX IF NOT EXISTS idx_mines_user ON mines_games(telegram_id, status);
 `);
 
-const MST_PER_STAR = 2; // Informational reference rate only; MST is not Telegram Stars.\nconst ROULETTE_MODES = {
+const MST_PER_STAR = 2; // Informational reference rate only; MST is not Telegram Stars.
+const ROULETTE_MODES = {
   classic: { id: "classic", title: "Mini Case", cost: 100, exponent: 2.1 },
   premium: { id: "premium", title: "Mystic Case", cost: 250, exponent: 1.25 },
   legendary: { id: "legendary", title: "NFT Case", cost: 500, exponent: 0.72 }
@@ -357,7 +358,8 @@ app.get("/api/roulette", auth, async (req,res) => {
     res.json({
       roulettes: rouletteList,
       ...rouletteList[0],
-      gift_count: gifts.length,\n      mst_per_star: MST_PER_STAR,
+      gift_count: gifts.length,
+      mst_per_star: MST_PER_STAR,
       notice: "Каталог загружается из Telegram Bot API. Выигрыш пока сохраняется в виртуальном инвентаре приложения."
     });
   } catch(err) { apiError(res,err); }
