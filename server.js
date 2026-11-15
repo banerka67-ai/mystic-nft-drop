@@ -20,7 +20,7 @@ const db = new Database(DB_PATH);
 db.pragma("journal_mode = WAL");
 db.pragma("foreign_keys = ON");
 
-db.exec(\`
+db.exec(`
 CREATE TABLE IF NOT EXISTS users (
   telegram_id TEXT PRIMARY KEY,
   first_name TEXT NOT NULL,
@@ -68,7 +68,7 @@ CREATE TABLE IF NOT EXISTS daily_claims (
 );
 CREATE INDEX IF NOT EXISTS idx_inventory_user ON inventory(telegram_id, id DESC);
 CREATE INDEX IF NOT EXISTS idx_mines_user ON mines_games(telegram_id, status);
-\`);
+`);
 
 const ROULETTES = {
   classic: {
