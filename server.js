@@ -60,6 +60,7 @@ CREATE TABLE IF NOT EXISTS users (
   first_name TEXT NOT NULL,
   username TEXT NOT NULL DEFAULT '',
   balance INTEGER NOT NULL DEFAULT 0 CHECK(balance >= 0),
+  purchased_balance INTEGER NOT NULL DEFAULT 0 CHECK(purchased_balance >= 0),
   created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
   updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
@@ -112,9 +113,40 @@ CREATE TABLE IF NOT EXISTS admin_balance_logs (
 );
 CREATE INDEX IF NOT EXISTS idx_inventory_user ON inventory(telegram_id, id DESC);
 CREATE INDEX IF NOT EXISTS idx_mines_user ON mines_games(telegram_id, status);
+CREATE TABLE IF NOT EXISTS stars_orders (
+  id TEXT PRIMARY KEY, payload TEXT NOT NULL UNIQUE,
+  telegram_id TEXT NOT NULL REFERENCES users(telegram_id),
+  package_id TEXT NOT NULL, stars INTEGER NOT NULL, mst INTEGER NOT NULL,
+  status TEXT NOT NULL DEFAULT 'pending',
+  telegram_payment_charge_id TEXT UNIQUE,
+  created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP, paid_at TEXT
+);
+CREATE TABLE IF NOT EXISTS shop_purchases (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  telegram_id TEXT NOT NULL REFERENCES users(telegram_id),
+  request_id TEXT NOT NULL, gift_id TEXT NOT NULL, cost_mst INTEGER NOT NULL,
+  created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  UNIQUE(telegram_id, request_id)
+);
+CREATE INDEX IF NOT EXISTS idx_stars_orders_user ON stars_orders(telegram_id, created_at DESC);
 `);
 
-const MST_PER_STAR = 2; // Informational reference rate only; MST is not Telegram Stars.
+// Existing SQLite databases receive this column without losing user balances.
+const userColumns = new Set(db.prepare("PRAGMA table_info(users)").all().map(column => column.name));
+if (!userColumns.has("purchased_balance")) {
+  db.exec("ALTER TABLE users ADD COLUMN purchased_balance INTEGER NOT NULL DEFAULT 0 CHECK(purchased_balance >= 0)");
+}
+
+const MST_PER_STAR = 2;
+const STARS_PACKAGES = {
+  stars_50: { id:"stars_50", stars:50, mst:100, title:"50 Stars" },
+  stars_100: { id:"stars_100", stars:100, mst:200, title:"100 Stars" },
+  stars_250: { id:"stars_250", stars:250, mst:500, title:"250 Stars" },
+  stars_500: { id:"stars_500", stars:500, mst:1000, title:"500 Stars" },
+  stars_1000: { id:"stars_1000", stars:1000, mst:2000, title:"1000 Stars" }
+};
+// Real payments are disabled until a persistent Render disk is mounted.
+const STARS_ENABLED = process.env.STARS_ENABLED === "true" && DB_PATH.startsWith("/var/data/");
 const parsedMinesRtp = Number(process.env.MINES_RTP ?? 0.96);
 const MINES_RTP = Number.isFinite(parsedMinesRtp) ? Math.min(0.99, Math.max(0.5, parsedMinesRtp)) : 0.96;
 const parsedMinesMaxBet = Number(process.env.MINES_MAX_BET ?? 10000);
@@ -343,7 +375,78 @@ app.get("/api/me", auth, (req,res) => {
   const row = getUser.get(u.id);
   const inventoryCount = db.prepare("SELECT COUNT(*) AS total FROM inventory WHERE telegram_id=?").get(u.id).total;
   const spinCount = db.prepare("SELECT COUNT(*) AS total FROM spins WHERE telegram_id=?").get(u.id).total;
-  res.json({ id: u.id, name: row.first_name, username: row.username, balance: row.balance, inventory_count: inventoryCount, spin_count: spinCount });
+  res.json({ id: u.id, name: row.first_name, username: row.username, balance: row.balance, purchased_balance: row.purchased_balance, inventory_count: inventoryCount, spin_count: spinCount });
+});
+
+app.get("/api/stars/packages", auth, (req,res) => {
+  res.json({ enabled:STARS_ENABLED, packages:Object.values(STARS_PACKAGES).map(({id,stars,mst,title}) => ({id,stars,mst,title})) });
+});
+
+app.post("/api/stars/create-invoice", auth, async (req,res) => {
+  if (!STARS_ENABLED) return res.status(503).json({ error:"Оплата пока отключена: сначала подключи постоянный диск Render." });
+  const pack = STARS_PACKAGES[req.body?.package_id];
+  if (!pack) return res.status(400).json({ error:"Неизвестный пакет Stars." });
+  try {
+    createUser.run(req.user.id,req.user.first_name,req.user.username);
+    const id = crypto.randomUUID();
+    const payload = "mystic_" + id;
+    db.prepare("INSERT INTO stars_orders(id,payload,telegram_id,package_id,stars,mst) VALUES(?,?,?,?,?,?)")
+      .run(id,payload,req.user.id,pack.id,pack.stars,pack.mst);
+    try {
+      const invoiceUrl = await telegramApi("createInvoiceLink", {
+        title:"Пополнение MYSTIC NFT DROP",
+        description:pack.mst.toLocaleString("ru-RU") + " MST для покупки виртуальных подарков",
+        payload, provider_token:"", currency:"XTR",
+        prices:[{label:pack.title,amount:pack.stars}]
+      });
+      res.json({invoice_url:invoiceUrl,order_id:id});
+    } catch(err) {
+      db.prepare("UPDATE stars_orders SET status='invoice_failed' WHERE id=? AND status='pending'").run(id);
+      throw err;
+    }
+  } catch(err) {
+    console.error("Stars invoice creation failed:",err.message);
+    res.status(502).json({error:"Не удалось создать счёт Telegram Stars."});
+  }
+});
+
+app.get("/api/shop", auth, async (req,res) => {
+  try {
+    const gifts = await getAvailableTelegramGifts();
+    res.json({gifts:gifts.map(g => ({
+      id:String(g.id), name:(g.sticker?.emoji || "🎁") + " Telegram Gift",
+      emoji:g.sticker?.emoji || "🎁", star_count:Number(g.star_count || 0),
+      cost_mst:Number(g.star_count || 0) * MST_PER_STAR,
+      limited:Number.isFinite(g.remaining_count) ? g.remaining_count : null
+    })).filter(g => g.cost_mst > 0)});
+  } catch(err) { apiError(res,err); }
+});
+
+app.post("/api/shop/purchase", auth, async (req,res) => {
+  try {
+    const {gift_id,request_id} = req.body || {};
+    if (typeof gift_id !== "string" || !gift_id.length || gift_id.length > 128 || !requireBodyString(request_id))
+      return res.status(400).json({error:"Некорректные данные покупки."});
+    const gifts = await getAvailableTelegramGifts();
+    const gift = gifts.find(g => String(g.id) === gift_id);
+    if (!gift) return res.status(404).json({error:"Этот подарок больше недоступен."});
+    const cost = Number(gift.star_count || 0) * MST_PER_STAR;
+    if (!Number.isSafeInteger(cost) || cost < 1) return res.status(400).json({error:"Некорректная цена подарка."});
+    const emoji = gift.sticker?.emoji || "🎁";
+    const result = db.transaction(() => {
+      createUser.run(req.user.id,req.user.first_name,req.user.username);
+      const previous = db.prepare("SELECT id FROM shop_purchases WHERE telegram_id=? AND request_id=?").get(req.user.id,request_id);
+      if (previous) return {replayed:true,balance:getUser.get(req.user.id).purchased_balance};
+      const user = getUser.get(req.user.id);
+      if (user.purchased_balance < cost) throw Object.assign(new Error("Недостаточно купленных MST. Пополни баланс через Stars."),{status:400});
+      db.prepare("UPDATE users SET purchased_balance=purchased_balance-?,updated_at=CURRENT_TIMESTAMP WHERE telegram_id=?").run(cost,req.user.id);
+      db.prepare("INSERT INTO shop_purchases(telegram_id,request_id,gift_id,cost_mst) VALUES(?,?,?,?)").run(req.user.id,request_id,gift_id,cost);
+      db.prepare("INSERT INTO inventory(telegram_id,prize_id,prize_name,emoji,rarity,source) VALUES(?,?,?,?,?,'stars_shop')")
+        .run(req.user.id,gift_id,emoji + " Telegram Gift",emoji,Number(gift.limited_count)>0 ? "Коллекционный" : "Подарок");
+      return {replayed:false,balance:getUser.get(req.user.id).purchased_balance};
+    }).immediate();
+    res.json({ok:true,...result,cost_mst:cost,gift:{id:gift_id,name:emoji+" Telegram Gift",emoji}});
+  } catch(err) { apiError(res,err); }
 });
 
 app.get("/api/daily", auth, requireSubscription, (req,res) => {
@@ -565,10 +668,52 @@ app.post("/telegram/webhook", async (req, res) => {
   if (!WEBHOOK_SECRET || req.get("x-telegram-bot-api-secret-token") !== WEBHOOK_SECRET) {
     return res.sendStatus(401);
   }
+  if (req.body?.pre_checkout_query) {
+    const query = req.body.pre_checkout_query;
+    const order = db.prepare("SELECT * FROM stars_orders WHERE payload=?").get(String(query.invoice_payload || ""));
+    const valid = !!order && order.status === "pending" &&
+      order.telegram_id === String(query.from?.id || "") &&
+      query.currency === "XTR" && Number(query.total_amount) === order.stars;
+    res.sendStatus(200);
+    telegramApi("answerPreCheckoutQuery", {
+      pre_checkout_query_id:query.id, ok:valid,
+      ...(!valid ? {error_message:"Счёт не найден или его данные не совпадают. Создай новый счёт."} : {})
+    }).catch(err => console.error("Stars pre-checkout failed:",err.message));
+    return;
+  }
   res.sendStatus(200);
   const message = req.body?.message;
   const chatId = message?.chat?.id;
   const senderId = message?.from?.id ? String(message.from.id) : "";
+  const successfulPayment = message?.successful_payment;
+  if (successfulPayment && senderId) {
+    const payment = successfulPayment;
+    try {
+      const credited = db.transaction(() => {
+        const order = db.prepare("SELECT * FROM stars_orders WHERE payload=?").get(String(payment.invoice_payload || ""));
+        if (!order || order.telegram_id !== senderId || order.status !== "pending" ||
+            payment.currency !== "XTR" || Number(payment.total_amount) !== order.stars ||
+            !payment.telegram_payment_charge_id) return null;
+        const duplicate = db.prepare("SELECT id FROM stars_orders WHERE telegram_payment_charge_id=?").get(payment.telegram_payment_charge_id);
+        if (duplicate) return null;
+        const updated = db.prepare("UPDATE stars_orders SET status='paid',telegram_payment_charge_id=?,paid_at=CURRENT_TIMESTAMP WHERE id=? AND status='pending'")
+          .run(payment.telegram_payment_charge_id,order.id);
+        if (!updated.changes) return null;
+        db.prepare("UPDATE users SET purchased_balance=purchased_balance+?,updated_at=CURRENT_TIMESTAMP WHERE telegram_id=?")
+          .run(order.mst,senderId);
+        return order;
+      }).immediate();
+      if (credited && chatId) {
+        await telegramApi("sendMessage", {chat_id:chatId,text:
+          "✅ Оплата получена!\n\nПакет: " + credited.stars + " ⭐\nНачислено: +" +
+          credited.mst.toLocaleString("ru-RU") + " MST\n\nКупленные MST доступны для покупки виртуальных подарков в MYSTIC NFT DROP."
+        });
+      } else if (!credited) {
+        console.warn("Stars payment ignored: invalid, duplicate or already processed payment");
+      }
+    } catch(err) { console.error("Stars payment processing failed:",err.message); }
+    return;
+  }
   const text = String(message?.text || "").trim();
   if (!chatId || !text) return;
 
@@ -577,6 +722,10 @@ app.post("/telegram/webhook", async (req, res) => {
   const balanceMatch = text.match(/^\/balance(?:@\w+)?\s+(\d{1,20})$/i);
 
   try {
+    if (/^\/paysupport(?:@\w+)?(?:\s|$)/i.test(text)) {
+      await reply("По вопросам оплаты Telegram Stars отправь администратору проекта скриншот платежа и свой Telegram ID. Не отправляй данные карты или коды.");
+      return;
+    }
     if (/^\/start(?:@\w+)?(?:\s|$)/i.test(text)) {
       await telegramApi("sendMessage", {
         chat_id: chatId,
@@ -638,7 +787,7 @@ async function configureTelegramBot() {
     await telegramApi("setWebhook", {
       url: PUBLIC_URL + "/telegram/webhook",
       secret_token: WEBHOOK_SECRET,
-      allowed_updates: ["message"],
+      allowed_updates: ["message","pre_checkout_query"],
       drop_pending_updates: false
     });
     await telegramApi("setChatMenuButton", {
