@@ -5,7 +5,40 @@ const fs = require("node:fs");
 const Database = require("better-sqlite3");
 
 const app = express();
+app.disable("x-powered-by");
+app.set("trust proxy", 1);
 app.use(express.json({ limit: "32kb" }));
+
+// Lightweight per-IP limits; protects public API routes from accidental/request floods.
+const requestBuckets = new Map();
+function rateLimit({ windowMs = 60_000, max = 120, message = "Слишком много запросов. Попробуй позже." } = {}) {
+  return (req, res, next) => {
+    const key = req.ip + ":" + (req.path.startsWith("/api/") ? req.path.split("/").slice(0, 3).join("/") : "global");
+    const now = Date.now();
+    let bucket = requestBuckets.get(key);
+    if (!bucket || now - bucket.startedAt >= windowMs) {
+      bucket = { startedAt: now, count: 0 };
+      requestBuckets.set(key, bucket);
+    }
+    bucket.count += 1;
+    if (bucket.count > max) {
+      res.set("Retry-After", String(Math.ceil((windowMs - (now - bucket.startedAt)) / 1000)));
+      return res.status(429).json({ error: message });
+    }
+    next();
+  };
+}
+app.use("/api", rateLimit());
+app.use("/api", (req, res, next) => {
+  if (["POST", "PUT", "PATCH", "DELETE"].includes(req.method)) {
+    return rateLimit({ max: 25, message: "Слишком много изменений подряд. Подожди минуту." })(req, res, next);
+  }
+  next();
+});
+setInterval(() => {
+  const now = Date.now();
+  for (const [key, bucket] of requestBuckets) if (now - bucket.startedAt > 120_000) requestBuckets.delete(key);
+}, 120_000).unref();
 
 const ROOT = __dirname;
 const PORT = Number(process.env.PORT || 3000);
@@ -13,7 +46,7 @@ const BOT_TOKEN = process.env.BOT_TOKEN || "";
 const CHANNEL = process.env.REQUIRED_CHANNEL || "@MysticDropNFT";
 const DEV_MODE = process.env.DEV_MODE === "true";
 const ADMIN_IDS = new Set((process.env.ADMIN_IDS || "").split(",").map(x => x.trim()).filter(Boolean));
-const DB_PATH = process.env.DB_PATH || path.join(ROOT, "data", "mystic.sqlite3");
+const DB_PATH = process.env.DB_PATH || (fs.existsSync("/var/data") ? "/var/data/mystic.sqlite3" : path.join(ROOT, "data", "mystic.sqlite3"));
 
 fs.mkdirSync(path.dirname(DB_PATH), { recursive: true });
 const db = new Database(DB_PATH);
@@ -114,6 +147,7 @@ const getUser = db.prepare("SELECT * FROM users WHERE telegram_id = ?");
 const createUser = db.prepare("INSERT OR IGNORE INTO users(telegram_id, first_name, username, balance) VALUES(?,?,?,0)");
 
 function validateInitData(initData) {
+  if (typeof initData !== "string" || initData.length > 8192) throw Object.assign(new Error("Некорректные данные авторизации Telegram"), { status: 401 });
   if (!BOT_TOKEN) throw Object.assign(new Error("На сервере не настроен BOT_TOKEN"), { status: 503 });
   const params = new URLSearchParams(initData || "");
   const receivedHash = params.get("hash");
@@ -199,28 +233,24 @@ app.get("/api/me", auth, (req,res) => {
 });
 
 app.get("/api/daily", auth, requireSubscription, (req,res) => {
-  createUser.run(req.user.id,req.user.first_name,req.user.username);
-  const claim = db.prepare("SELECT last_claim, streak FROM daily_claims WHERE telegram_id=?").get(req.user.id);
   const today = new Date().toISOString().slice(0,10);
-  const yesterday = new Date(Date.now()-86400000).toISOString().slice(0,10);
-  res.json({ claimed: claim?.last_claim === today, streak: claim?.streak || 0, reward: 100, next_streak: claim?.last_claim === yesterday ? (claim.streak % 7) + 1 : 1 });
+  const claim = db.prepare("SELECT id FROM task_claims WHERE telegram_id=? AND task_id='daily' AND claim_day=?").get(req.user.id,today);
+  res.json({ claimed: !!claim, reward: 25 });
 });
 app.post("/api/daily/claim", auth, requireSubscription, (req,res) => {
   try {
     createUser.run(req.user.id,req.user.first_name,req.user.username);
     const today = new Date().toISOString().slice(0,10);
-    const yesterday = new Date(Date.now()-86400000).toISOString().slice(0,10);
     const run = db.transaction(() => {
-      const old = db.prepare("SELECT last_claim, streak FROM daily_claims WHERE telegram_id=?").get(req.user.id);
-      if (old?.last_claim === today) throw Object.assign(new Error("Ежедневный бонус уже получен. Загляни завтра!"),{status:409});
-      const streak = old?.last_claim === yesterday ? (old.streak % 7) + 1 : 1;
-      const reward = 100 + (streak === 7 ? 100 : 0);
-      db.prepare("INSERT INTO daily_claims(telegram_id,last_claim,streak) VALUES(?,?,?) ON CONFLICT(telegram_id) DO UPDATE SET last_claim=excluded.last_claim, streak=excluded.streak").run(req.user.id,today,streak);
-      db.prepare("UPDATE users SET balance=balance+?, updated_at=CURRENT_TIMESTAMP WHERE telegram_id=?").run(reward,req.user.id);
-      return { reward, streak, balance:getUser.get(req.user.id).balance };
+      db.prepare("INSERT INTO task_claims(telegram_id,task_id,claim_day) VALUES(?,'daily',?)").run(req.user.id,today);
+      db.prepare("UPDATE users SET balance=balance+25, updated_at=CURRENT_TIMESTAMP WHERE telegram_id=?").run(req.user.id);
+      return { reward:25, balance:getUser.get(req.user.id).balance };
     });
-    res.json(run());
-  } catch(err) { apiError(res,err); }
+    res.json(run.immediate());
+  } catch(err) {
+    if (String(err.code || "").includes("CONSTRAINT")) return res.status(409).json({error:"Ежедневный бонус уже получен. Загляни завтра!"});
+    apiError(res,err);
+  }
 });
 
 app.get("/api/tasks", auth, (req,res) => {
@@ -245,13 +275,11 @@ app.post("/api/tasks/claim", auth, async (req,res) => {
     const reward = taskId === "subscribe" ? 100 : 25;
     const run = db.transaction(() => {
       createUser.run(req.user.id, req.user.first_name, req.user.username);
-      const existing = db.prepare("SELECT id FROM task_claims WHERE telegram_id=? AND task_id=? AND claim_day=?").get(req.user.id,taskId,claimDay);
-      if (existing) throw Object.assign(new Error("Награда за это задание уже получена"),{status:409});
       db.prepare("INSERT INTO task_claims(telegram_id,task_id,claim_day) VALUES(?,?,?)").run(req.user.id,taskId,claimDay);
       db.prepare("UPDATE users SET balance=balance+?, updated_at=CURRENT_TIMESTAMP WHERE telegram_id=?").run(reward,req.user.id);
       return getUser.get(req.user.id).balance;
     });
-    const balance = run();
+    const balance = run.immediate();
     res.json({ok:true,reward,balance,task_id:taskId});
   } catch(err) { apiError(res,err); }
 });
@@ -268,26 +296,26 @@ app.post("/api/spin", auth, requireSubscription, (req,res) => {
   try {
     const { request_id, roulette_id = "classic" } = req.body || {};
     if (!requireBodyString(request_id)) return res.status(400).json({ error: "Некорректный request_id" });
+    if (typeof roulette_id !== "string" || !ROULETTES[roulette_id]) return res.status(400).json({ error: "Неизвестная рулетка" });
     const roulette = ROULETTES[roulette_id];
-    if (!roulette) return res.status(400).json({ error: "Неизвестная рулетка" });
-    const existing = db.prepare("SELECT prize_id FROM spins WHERE telegram_id=? AND request_id=?").get(req.user.id, request_id);
-    if (existing) {
-      const prize = roulette.prizes.find(p => p.id === existing.prize_id) || ROULETTES.classic.prizes.find(p => p.id === existing.prize_id);
-      const user = getUser.get(req.user.id);
-      return res.json({ prize:safePrize(prize), balance:user.balance, replayed:true });
-    }
-    const prize = weightedPrize(roulette.prizes);
     const perform = db.transaction(() => {
       createUser.run(req.user.id, req.user.first_name, req.user.username);
+      const existing = db.prepare("SELECT roulette_id, prize_id FROM spins WHERE telegram_id=? AND request_id=?").get(req.user.id, request_id);
+      if (existing) {
+        const originalRoulette = ROULETTES[existing.roulette_id];
+        const prize = originalRoulette?.prizes.find(p => p.id === existing.prize_id);
+        if (!prize) throw new Error("Не удалось восстановить результат предыдущего запроса");
+        return { prize, balance: getUser.get(req.user.id).balance, replayed: true };
+      }
       const user = getUser.get(req.user.id);
       if (user.balance < roulette.cost) throw Object.assign(new Error("Недостаточно MST"), { status:400 });
+      const prize = weightedPrize(roulette.prizes);
       db.prepare("UPDATE users SET balance=balance-?, updated_at=CURRENT_TIMESTAMP WHERE telegram_id=?").run(roulette.cost,req.user.id);
       db.prepare("INSERT INTO inventory(telegram_id,prize_id,prize_name,emoji,rarity,source) VALUES(?,?,?,?,?,'roulette')").run(req.user.id,prize.id,prize.name,prize.emoji,prize.rarity);
       SPIN_STMT.run(req.user.id,request_id,roulette.id,prize.id,roulette.cost);
-      return getUser.get(req.user.id).balance;
-    });
-    const balance = perform();
-    res.json({ prize:safePrize(prize), balance, replayed:false });
+      return { prize, balance: getUser.get(req.user.id).balance, replayed: false };
+    }).immediate();
+    res.json({ prize:safePrize(perform.prize), balance:perform.balance, replayed:perform.replayed });
   } catch(err) { apiError(res,err); }
 });
 
@@ -325,22 +353,26 @@ app.post("/api/mines/start", auth, requireSubscription, (req,res) => {
 app.post("/api/mines/reveal", auth, requireSubscription, (req,res) => {
   try {
     const { game_id, cell } = req.body || {};
-    if (typeof game_id !== "string" || !Number.isInteger(cell) || cell < 0 || cell > 24) return res.status(400).json({ error:"Некорректная клетка" });
-    const row = db.prepare("SELECT * FROM mines_games WHERE id=? AND telegram_id=?").get(game_id,req.user.id);
-    if (!row || row.status !== "active") return res.status(404).json({ error:"Активная игра не найдена" });
-    const bombs = JSON.parse(row.bombs_json);
-    const revealed = JSON.parse(row.revealed_json);
-    if (revealed.includes(cell)) return res.status(400).json({ error:"Эта клетка уже открыта" });
-    if (bombs.includes(cell)) {
-      db.prepare("UPDATE mines_games SET revealed_json=?, status='lost', multiplier=0, payout=0, finished_at=CURRENT_TIMESTAMP WHERE id=?").run(JSON.stringify([...revealed,cell]),game_id);
-      return res.json({ hit:true, cell, bombs, revealed:[...revealed,cell], multiplier:0, payout:0 });
-    }
-    const next = [...revealed,cell];
-    let safeProbability = 1;
-    for (let i=0;i<next.length;i++) safeProbability *= (21-i)/(25-i);
-    const multiplier = Number((0.96 / safeProbability).toFixed(4));
-    db.prepare("UPDATE mines_games SET revealed_json=?, multiplier=? WHERE id=?").run(JSON.stringify(next),multiplier,game_id);
-    res.json({ hit:false, cell, revealed:next, multiplier, safe_count:next.length });
+    if (typeof game_id !== "string" || game_id.length > 64 || !Number.isInteger(cell) || cell < 0 || cell > 24) return res.status(400).json({ error:"Некорректная клетка" });
+    const result = db.transaction(() => {
+      const row = db.prepare("SELECT * FROM mines_games WHERE id=? AND telegram_id=?").get(game_id,req.user.id);
+      if (!row || row.status !== "active") throw Object.assign(new Error("Активная игра не найдена"), { status:404 });
+      const bombs = JSON.parse(row.bombs_json);
+      const revealed = JSON.parse(row.revealed_json);
+      if (revealed.includes(cell)) throw Object.assign(new Error("Эта клетка уже открыта"), { status:409 });
+      if (bombs.includes(cell)) {
+        const next = [...revealed,cell];
+        db.prepare("UPDATE mines_games SET revealed_json=?, status='lost', multiplier=0, payout=0, finished_at=CURRENT_TIMESTAMP WHERE id=? AND status='active'").run(JSON.stringify(next),game_id);
+        return { hit:true, cell, bombs, revealed:next, multiplier:0, payout:0 };
+      }
+      const next = [...revealed,cell];
+      let safeProbability = 1;
+      for (let i=0;i<next.length;i++) safeProbability *= (21-i)/(25-i);
+      const multiplier = Number((0.96 / safeProbability).toFixed(4));
+      db.prepare("UPDATE mines_games SET revealed_json=?, multiplier=? WHERE id=? AND status='active'").run(JSON.stringify(next),multiplier,game_id);
+      return { hit:false, cell, revealed:next, multiplier, safe_count:next.length };
+    }).immediate();
+    res.json(result);
   } catch(err) { apiError(res,err); }
 });
 
