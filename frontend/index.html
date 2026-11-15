@@ -4,7 +4,7 @@
 <meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
 <meta name="theme-color" content="#0a0b10"><title>MYSTIC NFT DROP — магазин подарков</title>
 <script src="https://telegram.org/js/telegram-web-app.js"></script>
-<link rel="stylesheet" href="/static/style.css?v=buttons-fix-10">
+<link rel="stylesheet" href="/static/style.css?v=mines-5x5-1">
 </head>
 <body><div class="app-shell">
 <header class="topbar">
@@ -41,6 +41,25 @@
 <section class="inventory-heading section-heading"><div><div class="eyebrow">YOUR COLLECTION</div><h2>Последние выигрыши</h2></div><button class="text-link" id="openInventory">Весь инвентарь ↗</button></section>
 <div class="inventory-list" id="homeInventory"><div class="empty-state">Пока нет выигрышей</div></div>
 </section>
+<section class="screen" id="minesScreen">
+  <div class="page-heading"><div class="eyebrow">MYSTIC MINI GAME</div><h1>Мины 5×5</h1><p>Открывай безопасные клетки, повышай множитель и забирай выигрыш в любой момент.</p></div>
+  <section class="mines-panel">
+    <div class="mines-topline"><span>ПОЛЕ <b>5 × 5</b></span><span>4 БОМБЫ</span></div>
+    <div class="mines-stats">
+      <div><small>ТЕКУЩИЙ МНОЖИТЕЛЬ</small><strong id="mineMultiplier">×1.00</strong></div>
+      <div><small>ТВОЯ СТАВКА</small><strong id="mineBetLabel">Ставка не сделана</strong></div>
+    </div>
+    <div class="mines-grid" id="mineGrid" aria-label="Игровое поле 5 на 5"></div>
+    <label class="bet-label" for="mineBet">СТАВКА В MST</label>
+    <input class="bet-input" id="mineBet" type="number" min="1" max="10000" step="1" value="10" inputmode="numeric">
+    <div class="mines-actions">
+      <button class="primary-btn" id="mineStart">НАЧАТЬ ИГРУ</button>
+      <button class="primary-btn cashout-btn" id="mineCashout" disabled>ЗАБРАТЬ ВЫИГРЫШ</button>
+    </div>
+    <p class="mine-status" id="mineStatus" aria-live="polite">Выбери ставку и начни игру. Первый ход безопасен.</p>
+    <p class="hint">Первый ход раунда защищён от бомбы. После каждого безопасного открытия множитель растёт. Ставка списывается при старте, выигрыш зачисляется при выводе из раунда.</p>
+  </section>
+</section>
 <section class="screen" id="tasksScreen">
 <div class="page-heading"><div class="eyebrow">BONUS CENTER</div><h1>Задания</h1><p>Выполняй задания и получай внутреннюю валюту MST. Расчётный ориентир: 2 MST ≈ 1 Telegram ⭐.</p></div>
 <div class="task-summary"><div><span class="eyebrow">ДОСТУПНЫЕ ЗАДАНИЯ</span><strong id="taskCount">Загрузка…</strong></div><span class="task-summary-icon">✦</span></div>
@@ -61,10 +80,11 @@
 </main>
 <nav class="bottom-nav">
 <button class="nav-item active" data-screen="homeScreen"><span>✦</span>Магазин</button>
-<button class="nav-item" data-screen="tasksScreen"><span>☼</span>Задания</button>
+<button class="nav-item" data-screen="minesScreen"><span>▦</span>Мины 5×5</button>
+  <button class="nav-item" data-screen="tasksScreen"><span>☼</span>Задания</button>
 <button class="nav-item" data-screen="inventoryScreen"><span>◇</span>Инвентарь</button>
 <button class="nav-item" data-screen="profileScreen"><span>○</span>Профиль</button>
 </nav></div>
 <div class="modal hidden" id="resultModal"><div class="modal-card"><div class="modal-glow"></div><div class="eyebrow">ТВОЙ ВЫИГРЫШ</div><div class="result-art" id="resultArt"></div><h2 id="resultName">Подарок!</h2><div class="rarity" id="resultRarity"></div><button class="primary-btn" id="closeResult">ЗАБРАТЬ В ИНВЕНТАРЬ</button></div></div>
 <div class="toast" id="toast"></div>
-<script src="/static/app.js?v=buttons-fix-10"></script></body></html>
+<script src="/static/app.js?v=mines-5x5-1"></script></body></html>
