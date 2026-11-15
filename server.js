@@ -169,7 +169,7 @@ function buildRoulettes(gifts) {
   const limited = sorted.filter(g => Number.isFinite(g.limited_count) && g.limited_count > 0);
   const premiumPool = take(0.72);
   const nftPool = limited.length
-    ? limited.slice().sort((a,b) => Number(b.star_count || 0) - Number(a.star_count || 0))
+    ? limited.slice().sort((a,b) => Number(a.star_count || 0) - Number(b.star_count || 0))
     : sorted.slice(Math.max(0, Math.floor(count * 0.65)));
   const pools = {
     classic: take(0.4),
