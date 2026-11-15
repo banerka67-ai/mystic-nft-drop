@@ -17,6 +17,47 @@ let mineGame = null;
 let mineBusy = false;
 let mineMaxBet = 10000;
 let mineFinishedMessage = "";
+let audioContext = null;
+
+function playTone(frequency, duration = 0.08, type = "sine", volume = 0.035) {
+  try {
+    const AudioCtx = window.AudioContext || window.webkitAudioContext;
+    if (!AudioCtx) return;
+    audioContext ||= new AudioCtx();
+    if (audioContext.state === "suspended") audioContext.resume();
+    const oscillator = audioContext.createOscillator();
+    const gain = audioContext.createGain();
+    oscillator.type = type;
+    oscillator.frequency.setValueAtTime(frequency, audioContext.currentTime);
+    gain.gain.setValueAtTime(volume, audioContext.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.001, audioContext.currentTime + duration);
+    oscillator.connect(gain);
+    gain.connect(audioContext.destination);
+    oscillator.start();
+    oscillator.stop(audioContext.currentTime + duration);
+  } catch {}
+}
+
+function startRouletteSound() {
+  const startedAt = performance.now();
+  let nextTick = 0;
+  const duration = 6000;
+  const tick = now => {
+    const elapsed = now - startedAt;
+    if (elapsed >= duration) {
+      playTone(880, 0.22, "sine", 0.055);
+      playTone(1175, 0.28, "triangle", 0.035);
+      return;
+    }
+    if (now >= nextTick) {
+      const progress = elapsed / duration;
+      playTone(520 - progress * 150, 0.035, "square", 0.018);
+      nextTick = now + 48 + progress * progress * 190;
+    }
+    requestAnimationFrame(tick);
+  };
+  requestAnimationFrame(tick);
+}
 
 async function api(path, options = {}) {
   const headers = {
@@ -91,9 +132,21 @@ function renderGifts() {
 
 function renderReel(prizes, winner = null) {
   const reel = $("reel");
-  const tiles = Array.from({ length: 22 }, (_, index) =>
-    index === 17 && winner ? winner : prizes[(index * 3 + Math.floor(index / 2)) % prizes.length]
-  );
+  const pool = prizes.filter(Boolean);
+  const tiles = [];
+  let previousId = null;
+  for (let index = 0; index < 22; index++) {
+    if (index === 17 && winner) {
+      tiles.push(winner);
+      previousId = winner.id;
+      continue;
+    }
+    let choices = pool.filter(prize => prize.id !== previousId);
+    if (!choices.length) choices = pool;
+    const prize = choices[Math.floor(Math.random() * choices.length)];
+    tiles.push(prize);
+    previousId = prize.id;
+  }
   reel.innerHTML = tiles.map(prize =>
     '<div class="prize-tile"><div class="tile-art">' + art(prize.id, prize.emoji) +
     "</div><small>" + esc(prize.name) + "</small></div>"
@@ -101,7 +154,7 @@ function renderReel(prizes, winner = null) {
   reel.style.transition = "none";
   reel.style.transform = "translateX(0)";
   void reel.offsetWidth;
-  reel.style.transition = "transform 3.2s cubic-bezier(.12,.72,.08,1)";
+  reel.style.transition = "transform 6s cubic-bezier(.10,.72,.08,1)";
   return tiles;
 }
 
@@ -188,10 +241,11 @@ async function spin() {
       body: JSON.stringify({ request_id: crypto.randomUUID(), roulette_id: activeMode })
     });
     renderReel(roulette.prizes, result.prize);
+    startRouletteSound();
     const reel = $("reel");
     const target = Math.max(0, 17 * 90 + 41 - $("reel").parentElement.clientWidth / 2);
     requestAnimationFrame(() => { reel.style.transform = "translateX(-" + target + "px)"; });
-    setTimeout(() => showResult(result.prize), 3300);
+    setTimeout(() => showResult(result.prize), 6100);
     setBalance(result.balance);
     const inventory = await api("/api/inventory");
     items = inventory.items || [];
@@ -323,8 +377,12 @@ async function revealMine(cell) {
       mineGame.bombs = result.bombs || [];
       mineGame.status = "lost";
       mineFinishedMessage = "Бомба! Раунд завершён. Попробуй ещё раз.";
+      playTone(105, 0.42, "sawtooth", 0.075);
+      playTone(62, 0.5, "triangle", 0.055);
       toast("Бомба! Ставка проиграна.");
     } else {
+      playTone(740, 0.09, "sine", 0.045);
+      playTone(980, 0.12, "triangle", 0.025);
       toast("Безопасно · множитель ×" + Number(result.multiplier).toFixed(2));
     }
   } catch (error) {
