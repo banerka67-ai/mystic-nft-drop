@@ -94,11 +94,6 @@ CREATE TABLE IF NOT EXISTS mines_games (
   created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
   finished_at TEXT
 );
-CREATE TABLE IF NOT EXISTS daily_claims (
-  telegram_id TEXT PRIMARY KEY REFERENCES users(telegram_id),
-  last_claim TEXT NOT NULL,
-  streak INTEGER NOT NULL DEFAULT 1
-);
 CREATE TABLE IF NOT EXISTS task_claims (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
   telegram_id TEXT NOT NULL REFERENCES users(telegram_id),
@@ -391,7 +386,7 @@ app.post("/api/mines/cashout", auth, requireSubscription, (req,res) => {
       db.prepare("UPDATE users SET balance=balance+? WHERE telegram_id=?").run(payout,req.user.id);
       return { payout, multiplier, balance:getUser.get(req.user.id).balance };
     });
-    res.json(run());
+    res.json(run.immediate());
   } catch(err) { apiError(res,err); }
 });
 
