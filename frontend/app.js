@@ -522,10 +522,10 @@ async function load() {
     shopGifts = shopData.gifts || [];
     mstPerStar = Number(rouletteData.mst_per_star) || 2;
     renderGifts();
-    await loadStarsPackages();
     selectMode("classic");
-    await loadTasks();
-    await restoreMines();
+
+    // Do not hold the usable shop screen while secondary tabs load.
+    Promise.allSettled([loadStarsPackages(), loadTasks(), restoreMines()]);
   } catch (error) {
     loadError(error);
     $("taskList").innerHTML = '<div class="setup-message"><strong>Задания недоступны</strong><p>' +
