@@ -74,34 +74,33 @@ const ROULETTES = {
   classic: {
     id: "classic", title: "Mystic Classic", cost: 100,
     prizes: [
-      { id: "moon", name: "Moon", emoji: "🌙", rarity: "Обычный", weight: 48 },
-      { id: "star", name: "Star", emoji: "⭐", rarity: "Обычный", weight: 30 },
-      { id: "crystal", name: "Crystal", emoji: "💎", rarity: "Редкий", weight: 15 },
-      { id: "crown", name: "Crown", emoji: "👑", rarity: "Эпический", weight: 6 },
-      { id: "dragon", name: "Mystic Dragon", emoji: "🐉", rarity: "Легендарный", weight: 1 }
+      { id: "teddy_bear", name: "Teddy Bear", emoji: "🧸", rarity: "Обычный", gift_id: "5170233102089322756", weight: 48 },
+      { id: "red_rose", name: "Red Rose", emoji: "🌹", rarity: "Обычный", gift_id: "5168103777563050263", weight: 30 },
+      { id: "gift_box", name: "Gift Box", emoji: "🎁", rarity: "Редкий", gift_id: "5170250947678437525", weight: 15 },
+      { id: "rocket", name: "Rocket", emoji: "🚀", rarity: "Эпический", gift_id: "5170564780938756245", weight: 6 },
+      { id: "diamond_ring", name: "Diamond Ring", emoji: "💍", rarity: "Легендарный", gift_id: "5170690322832818290", weight: 1 }
     ]
   },
   premium: {
     id: "premium", title: "Mystic Premium", cost: 250,
     prizes: [
-      { id: "moon", name: "Moon", emoji: "🌙", rarity: "Обычный", weight: 35 },
-      { id: "star", name: "Star", emoji: "⭐", rarity: "Обычный", weight: 30 },
-      { id: "crystal", name: "Crystal", emoji: "💎", rarity: "Редкий", weight: 22 },
-      { id: "crown", name: "Crown", emoji: "👑", rarity: "Эпический", weight: 10 },
-      { id: "dragon", name: "Mystic Dragon", emoji: "🐉", rarity: "Легендарный", weight: 3 }
+      { id: "teddy_bear", name: "Teddy Bear", emoji: "🧸", rarity: "Обычный", gift_id: "5170233102089322756", weight: 35 },
+      { id: "red_rose", name: "Red Rose", emoji: "🌹", rarity: "Обычный", gift_id: "5168103777563050263", weight: 30 },
+      { id: "gift_box", name: "Gift Box", emoji: "🎁", rarity: "Редкий", gift_id: "5170250947678437525", weight: 22 },
+      { id: "rocket", name: "Rocket", emoji: "🚀", rarity: "Эпический", gift_id: "5170564780938756245", weight: 10 },
+      { id: "diamond_ring", name: "Diamond Ring", emoji: "💍", rarity: "Легендарный", gift_id: "5170690322832818290", weight: 3 }
     ]
   },
   legendary: {
     id: "legendary", title: "Mystic Legend", cost: 500,
     prizes: [
-      { id: "moon", name: "Moon", emoji: "🌙", rarity: "Обычный", weight: 20 },
-      { id: "star", name: "Star", emoji: "⭐", rarity: "Обычный", weight: 25 },
-      { id: "crystal", name: "Crystal", emoji: "💎", rarity: "Редкий", weight: 30 },
-      { id: "crown", name: "Crown", emoji: "👑", rarity: "Эпический", weight: 18 },
-      { id: "dragon", name: "Mystic Dragon", emoji: "🐉", rarity: "Легендарный", weight: 7 }
+      { id: "teddy_bear", name: "Teddy Bear", emoji: "🧸", rarity: "Обычный", gift_id: "5170233102089322756", weight: 20 },
+      { id: "red_rose", name: "Red Rose", emoji: "🌹", rarity: "Обычный", gift_id: "5168103777563050263", weight: 25 },
+      { id: "gift_box", name: "Gift Box", emoji: "🎁", rarity: "Редкий", gift_id: "5170250947678437525", weight: 30 },
+      { id: "rocket", name: "Rocket", emoji: "🚀", rarity: "Эпический", gift_id: "5170564780938756245", weight: 18 },
+      { id: "diamond_ring", name: "Diamond Ring", emoji: "💍", rarity: "Легендарный", gift_id: "5170690322832818290", weight: 7 }
     ]
-  }
-};
+  }};
 const SPIN_STMT = db.prepare("INSERT INTO spins(telegram_id, request_id, roulette_id, prize_id, cost) VALUES(?,?,?,?,?)");
 const getUser = db.prepare("SELECT * FROM users WHERE telegram_id = ?");
 const createUser = db.prepare("INSERT OR IGNORE INTO users(telegram_id, first_name, username, balance) VALUES(?,?,?,0)");
