@@ -64,6 +64,8 @@ function showScreen(screenId) {
 function buildReel() {
   if (!roulette) return;
   $("reel").innerHTML = roulette.prizes.map(p => `<div class="prize-tile">${artMarkup(p)}<small>${escapeHtml(p.name)}</small></div>`).join("");
+  const odds = roulette.odds || {};
+  $("oddsList").innerHTML = Object.entries(odds).map(([name,weight]) => `<span>${escapeHtml(name)} <b>${Number(weight).toFixed(0)}%</b></span>`).join("");
 }
 async function load() {
   try {
