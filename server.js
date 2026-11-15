@@ -11,7 +11,7 @@ app.use(express.json({ limit: "32kb" }));
 
 // Lightweight per-IP limits; protects public API routes from accidental/request floods.
 const requestBuckets = new Map();
-function rateLimit({ windowMs = 60_000, max = 120, message = "Слишком много запросов. Попробуй позже." } = {}) {
+function rateLimit({ windowMs = 60_000, max = 300, message = "Слишком много запросов. Попробуй позже." } = {}) {
   return (req, res, next) => {
     const key = req.ip + ":" + (req.path.startsWith("/api/") ? req.path.split("/").slice(0, 3).join("/") : "global");
     const now = Date.now();
